@@ -316,7 +316,7 @@ def normalize_school(name):
     return s
 
 
-def compute_field(edges, lookup, lookup_agg, field, indeg_df, llm_tiers=None):
+def compute_field(edges, lookup, lookup_agg, field, indeg_df, springrank_scores, llm_tiers=None):
     """Compute ranking for one field."""
     print(f"\n{'='*60}")
     print(f"  {field.upper()} v1.3")
@@ -423,9 +423,9 @@ def compute_field(edges, lookup, lookup_agg, field, indeg_df, llm_tiers=None):
     # ── R score: return penalty ──
     s['R'] = (1.0 - 0.7 * s['self_ret']).clip(0, 1)
 
-    # ── I score: dual regime using indegree-based prestige (100% coverage) ──
-    # Indegree from global_emp_inflow has 100% coverage (same ORCID data)
-    # Use it for prestigious classification and retention, not OpenAlex cbc
+    # ── I score: dual regime using SpringRank prestige ──
+    # SpringRank on global placement network: size-independent prestige
+    # Also use indegree for destination prestige (100% coverage)
     indeg_map = indeg_df.set_index('dest')['indegree'].to_dict()
     edges['dest_indegree'] = edges['dest'].map(indeg_map).fillna(0)
     edges['dest_indeg_log'] = np.log1p(edges['dest_indegree'])
@@ -435,16 +435,16 @@ def compute_field(edges, lookup, lookup_agg, field, indeg_df, llm_tiers=None):
     else:
         edges['dest_indeg_norm'] = 0
 
-    # School prestige = school's own indegree
-    s['school_indegree'] = s['phd_school'].map(indeg_map).fillna(0)
+    # School prestige from SpringRank (size-independent)
+    s['school_springrank'] = s['phd_school'].map(springrank_scores).fillna(0)
 
-    # Prestigious: top 10% of ranked schools by own indegree
+    # Prestigious: top 10% of ranked schools by SpringRank
     eligible = s[s['n'] >= MIN_N]
-    prestige_thresh = eligible['school_indegree'].quantile(0.90)
-    s['is_prestigious'] = s['school_indegree'] >= prestige_thresh
+    prestige_thresh = eligible['school_springrank'].quantile(0.90)
+    s['is_prestigious'] = s['school_springrank'] >= prestige_thresh
 
     n_prest = s[s['is_prestigious'] & (s['n'] >= MIN_N)].shape[0]
-    print(f"\n  Prestigious schools (top-10% by indegree): {n_prest} (threshold={prestige_thresh:.0f})")
+    print(f"\n  Prestigious schools (top-10% by SpringRank): {n_prest} (threshold={prestige_thresh:.3f})")
 
     # For prestigious: retention = % going to equally prestigious dests
     # "Equally prestigious" = dest indegree above median (top 50%)
@@ -458,13 +458,15 @@ def compute_field(edges, lookup, lookup_agg, field, indeg_df, llm_tiers=None):
     s = s.merge(retention, on=['phd_school', 'phd_country'], how='left')
     s['retention'] = s['retention'].fillna(0.5)
 
-    # For non-prestigious: uplift percentile (dest indeg prestige - school prestige)
-    school_indeg_norm = {}
-    for _, row in s.iterrows():
-        v = np.log1p(row['school_indegree']) / max_indeg if max_indeg > 0 else 0
-        school_indeg_norm[row['phd_school']] = v
-    edges['school_indeg_norm'] = edges['phd_school'].map(school_indeg_norm).fillna(0)
-    edges['uplift'] = edges['dest_indeg_norm'] - edges['school_indeg_norm']
+    # For non-prestigious: uplift percentile (dest prestige - school prestige)
+    # Use SpringRank for school prestige, indegree for dest prestige
+    edges['school_springrank'] = edges['phd_school'].map(springrank_scores).fillna(0)
+    # Normalize SpringRank to [0,1] for uplift calculation
+    sr_min = edges['school_springrank'].min()
+    sr_max = edges['school_springrank'].max()
+    sr_range = sr_max - sr_min if sr_max > sr_min else 1
+    edges['school_sr_norm'] = (edges['school_springrank'] - sr_min) / sr_range
+    edges['uplift'] = edges['dest_indeg_norm'] - edges['school_sr_norm']
     uplift_by_school = edges.groupby(['phd_school', 'phd_country'])['uplift'].mean().reset_index()
     uplift_by_school.columns = ['phd_school', 'phd_country', 'uplift_raw']
     s = s.merge(uplift_by_school, on=['phd_school', 'phd_country'], how='left')
@@ -611,6 +613,16 @@ def main():
     indeg_df = indeg_df.groupby('dest')['indegree'].sum().reset_index()
     print(f"  Dest indegree: {len(indeg_df):,} destinations")
 
+    # Load SpringRank scores
+    sr_path = os.path.join(d, 'springrank_scores.json')
+    if os.path.exists(sr_path):
+        with open(sr_path, 'r') as f:
+            springrank_scores = json.load(f)
+        print(f"  SpringRank scores: {len(springrank_scores):,} institutions")
+    else:
+        print(f"  WARNING: {sr_path} not found, falling back to indegree for prestige")
+        springrank_scores = {}
+
     # Process each field
     all_json = {}
     all_grads = {}
@@ -625,7 +637,7 @@ def main():
             continue
         try:
             edges = pd.read_parquet(parquet)
-            recs, grads = compute_field(edges, lookup, lookup_agg, field, indeg_df, llm_tiers)
+            recs, grads = compute_field(edges, lookup, lookup_agg, field, indeg_df, springrank_scores, llm_tiers)
             all_json[field] = recs
             all_grads.update(grads)
         except Exception as e:
