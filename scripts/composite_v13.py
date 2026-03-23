@@ -33,7 +33,7 @@ from collections import Counter
 # ═══════════════════════════════════════════════════════════
 
 MIN_N = 15
-SHRINKAGE_K = 20
+SHRINKAGE_K = 40
 WEIGHTS = {'D': 0.40, 'T': 0.35, 'R': 0.10, 'I': 0.15}
 INTL_ALPHA = 0.3  # international premium
 CONC_CAP = 0.10   # employer concentration cap
@@ -484,48 +484,23 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     else:
         edges['dest_indeg_norm'] = 0
 
-    # School prestige from SpringRank (size-independent)
+    # School prestige from SpringRank (for prestigious flag only)
     s['school_springrank'] = s['phd_school'].map(springrank_scores).fillna(0)
-
-    # Prestigious: top 10% of ranked schools by SpringRank
     eligible = s[s['n'] >= MIN_N]
     prestige_thresh = eligible['school_springrank'].quantile(0.90)
     s['is_prestigious'] = s['school_springrank'] >= prestige_thresh
 
-    n_prest = s[s['is_prestigious'] & (s['n'] >= MIN_N)].shape[0]
-    print(f"\n  Prestigious schools (top-10% by SpringRank): {n_prest} (threshold={prestige_thresh:.3f})")
+    # I score: retention using community-adjusted dest prestige (same scale as D)
+    # This avoids indegree bias that inflates academic-heavy placements
+    dp_thresh = edges['dest_prestige_norm'].quantile(0.60)
+    print(f"\n  I-score: retention on dest_prestige (P60={dp_thresh:.3f})")
 
-    # For prestigious: retention = % going to equally prestigious dests
-    # "Equally prestigious" = dest indegree above median (top 50%)
-    indeg_thresh = edges['dest_indeg_norm'].quantile(0.50)
-    print(f"  Retention threshold (P50 indeg_norm): {indeg_thresh:.3f}")
-
-    edges['is_prestigious_dest'] = (edges['dest_indeg_norm'] >= indeg_thresh).astype(int)
-
-    retention = edges.groupby(['phd_school', 'phd_country'])['is_prestigious_dest'].mean().reset_index()
+    edges['is_good_dest'] = (edges['dest_prestige_norm'] >= dp_thresh).astype(int)
+    retention = edges.groupby(['phd_school', 'phd_country'])['is_good_dest'].mean().reset_index()
     retention.columns = ['phd_school', 'phd_country', 'retention']
     s = s.merge(retention, on=['phd_school', 'phd_country'], how='left')
     s['retention'] = s['retention'].fillna(0.5)
-
-    # For non-prestigious: uplift percentile (dest prestige - school prestige)
-    # Use SpringRank for school prestige, indegree for dest prestige
-    edges['school_springrank'] = edges['phd_school'].map(springrank_scores).fillna(0)
-    # Normalize SpringRank to [0,1] for uplift calculation
-    sr_min = edges['school_springrank'].min()
-    sr_max = edges['school_springrank'].max()
-    sr_range = sr_max - sr_min if sr_max > sr_min else 1
-    edges['school_sr_norm'] = (edges['school_springrank'] - sr_min) / sr_range
-    edges['uplift'] = edges['dest_indeg_norm'] - edges['school_sr_norm']
-    uplift_by_school = edges.groupby(['phd_school', 'phd_country'])['uplift'].mean().reset_index()
-    uplift_by_school.columns = ['phd_school', 'phd_country', 'uplift_raw']
-    s = s.merge(uplift_by_school, on=['phd_school', 'phd_country'], how='left')
-
-    # I score: prestigious → retention, others → uplift percentile
-    s['I'] = np.where(
-        s['is_prestigious'],
-        s['retention'],
-        s['uplift_raw'].rank(pct=True)
-    )
+    s['I'] = s['retention']
 
     # ── Variety bonus ──
     # Schools with diverse outcomes (grads to academia + industry + policy) are rewarded
