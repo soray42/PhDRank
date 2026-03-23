@@ -395,7 +395,37 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
 
     edges['is_intl'] = (edges['dest_country'] != edges['phd_country']).astype(int)
 
-    edges['D_i'] = edges['dest_prestige_norm'] * (1 + INTL_ALPHA * edges['is_intl'])
+    # Tier × Region crossing: edges that cross both community AND prestige tier
+    # are hierarchy-driven (most impressive). Same community + same tier = community-driven.
+    edges['school_comm'] = edges['phd_school'].map(node_comms).fillna(-1).astype(int)
+    edges['dest_comm'] = edges['dest'].map(node_comms).fillna(-2).astype(int)
+    edges['school_sr'] = edges['phd_school'].map(springrank_scores).fillna(0)
+    edges['dest_sr'] = edges['dest'].map(springrank_scores).fillna(0)
+
+    # Define prestige tiers from SpringRank
+    sr_p75 = np.percentile([v for v in springrank_scores.values()], 75)
+    sr_p50 = np.percentile([v for v in springrank_scores.values()], 50)
+    def sr_tier(score):
+        if score >= sr_p75:
+            return 2  # elite
+        elif score >= sr_p50:
+            return 1  # mid
+        return 0      # base
+
+    edges['school_tier'] = edges['school_sr'].apply(sr_tier)
+    edges['dest_tier'] = edges['dest_sr'].apply(sr_tier)
+
+    cross_region = (edges['school_comm'] != edges['dest_comm']).astype(int)
+    cross_tier = (edges['dest_tier'] != edges['school_tier']).astype(int)
+
+    # Quality multiplier: cross-region AND/OR cross-tier placements get bonus
+    # Same region + same tier = 0.90 (community discount)
+    # Same region + cross tier = 1.00 (neutral)
+    # Cross region + same tier = 1.05 (mild bonus)
+    # Cross region + cross tier = 1.10 (hierarchy signal)
+    edges['edge_quality'] = 0.90 + 0.10 * cross_region + 0.10 * cross_tier
+
+    edges['D_i'] = edges['dest_prestige_norm'] * edges['edge_quality'] * (1 + INTL_ALPHA * edges['is_intl'])
 
     # ── T score: tier × dest_prestige, with concentration cap ──
     edges['T_i'] = edges['tier'].map(TIER_SCORES).fillna(0.5)
@@ -497,22 +527,37 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
         s['uplift_raw'].rank(pct=True)
     )
 
-    # ── Variance penalty ──
-    # Programs with inconsistent outcomes (some grads to MIT, others to unknown) are penalized
-    dest_var = edges.groupby(['phd_school', 'phd_country'])['dest_prestige_norm'].std().reset_index()
-    dest_var.columns = ['phd_school', 'phd_country', 'dest_var']
-    dest_mean = edges.groupby(['phd_school', 'phd_country'])['dest_prestige_norm'].mean().reset_index()
-    dest_mean.columns = ['phd_school', 'phd_country', 'dest_mean']
-    s = s.merge(dest_var, on=['phd_school', 'phd_country'], how='left')
-    s = s.merge(dest_mean, on=['phd_school', 'phd_country'], how='left')
-    # Coefficient of variation, capped
-    s['cv'] = (s['dest_var'] / s['dest_mean'].clip(lower=0.01)).clip(0, 2)
-    LAMBDA_VAR = 0.05  # variance penalty weight
-    s['var_penalty'] = LAMBDA_VAR * s['cv']
+    # ── Variety bonus ──
+    # Schools with diverse outcomes (grads to academia + industry + policy) are rewarded
+    # Schools with monotone outcomes (all to same type/tier) are penalized
+    n_unique_dest = edges.groupby(['phd_school', 'phd_country'])['dest'].nunique().reset_index()
+    n_unique_dest.columns = ['phd_school', 'phd_country', 'n_unique_dest']
+    s = s.merge(n_unique_dest, on=['phd_school', 'phd_country'], how='left')
+    # Normalized destination entropy (how spread out are grad destinations?)
+    def dest_entropy(group):
+        counts = group['dest'].value_counts()
+        probs = counts / counts.sum()
+        H = -(probs * np.log(probs + 1e-10)).sum()
+        max_H = np.log(max(len(counts), 2))
+        return H / max_H if max_H > 0 else 0
+    entropy_df = edges.groupby(['phd_school', 'phd_country']).apply(
+        dest_entropy, include_groups=False
+    ).reset_index()
+    entropy_df.columns = ['phd_school', 'phd_country', 'dest_entropy']
+    s = s.merge(entropy_df, on=['phd_school', 'phd_country'], how='left')
+    # Also: tier diversity (how many different career tiers?)
+    tier_div = edges.groupby(['phd_school', 'phd_country'])['tier'].nunique().reset_index()
+    tier_div.columns = ['phd_school', 'phd_country', 'n_tiers']
+    s = s.merge(tier_div, on=['phd_school', 'phd_country'], how='left')
+    s['tier_diversity'] = (s['n_tiers'] / len(TIER_SCORES)).clip(0, 1)
+    # Variety = 0.7*dest_entropy + 0.3*tier_diversity
+    s['variety'] = 0.7 * s['dest_entropy'].fillna(0.5) + 0.3 * s['tier_diversity'].fillna(0.3)
+    LAMBDA_VAR = 0.05
+    s['variety_bonus'] = LAMBDA_VAR * s['variety']
 
     # ── Composite ──
     w = WEIGHTS
-    s['composite'] = w['D'] * s['D'] + w['T'] * s['T'] + w['R'] * s['R'] + w['I'] * s['I'] - s['var_penalty']
+    s['composite'] = w['D'] * s['D'] + w['T'] * s['T'] + w['R'] * s['R'] + w['I'] * s['I'] + s['variety_bonus']
     cmin, cmax = s['composite'].min(), s['composite'].max()
     s['score'] = ((s['composite'] - cmin) / (cmax - cmin) * 100).round(2)
 
