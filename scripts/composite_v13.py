@@ -334,7 +334,7 @@ def normalize_school(name):
     s = name.lower().strip()
     s = re.sub(r'^the\s+', '', s)               # remove leading "the"
     s = re.sub(r'\s*\([^)]*\)\s*', ' ', s)      # remove parenthetical
-    s = re.sub(r'[,.:;]+', '', s)                # remove punctuation
+    s = re.sub(r'[,.:;\'\x27\u2019]+', '', s)     # remove punctuation + apostrophes
     s = re.sub(r'[-\u2013\u2014]+', ' ', s)      # normalize dashes
     s = re.sub(r'\bat\b', '', s)                 # remove "at" (univ of X at Y)
     s = re.sub(r'\s+', ' ', s).strip()
