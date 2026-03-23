@@ -648,9 +648,9 @@ def main():
     all_grads = {}
 
     for field, parquet in [
-        ('cs', os.path.join(d, 'phd3_cs.parquet')),
-        ('econ', os.path.join(d, 'phd3_econ.parquet')),
-        ('math', os.path.join(d, 'phd3_math.parquet')),
+        ('cs', os.path.join(d, 'phd4_cs.parquet')),
+        ('econ', os.path.join(d, 'phd4_econ.parquet')),
+        ('math', os.path.join(d, 'phd4_math.parquet')),
     ]:
         if not os.path.exists(parquet):
             print(f"\n  WARNING: {parquet} not found, skipping {field}")
