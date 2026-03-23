@@ -183,11 +183,25 @@ def build_matching_engine(openalex_csv, ror_json_path=None):
             if base and (base not in lookup_agg or cbc > lookup_agg[base][0]):
                 lookup_agg[base] = (cbc, dn, 'L4_parent')
 
+    # Layer 5: Prefix matching
+    # "purdue university" → "purdue university west lafayette" (highest cbc)
+    # Build sorted list of all OA normalized names for prefix search
+    oa_norm_to_cbc = {}  # normalized OA name → (cbc, display_name)
+    for _, row in oa.iterrows():
+        cbc = int(row['cited_by_count']) if pd.notna(row['cited_by_count']) else 0
+        dn = row['display_name']
+        k = normalize(str(row['display_name_lower']))
+        if k and (k not in oa_norm_to_cbc or cbc > oa_norm_to_cbc[k][0]):
+            oa_norm_to_cbc[k] = (cbc, dn)
+    # Store for prefix lookups at match time
+    _prefix_candidates = oa_norm_to_cbc
+
     print(f"  Combined lookup: {len(lookup)} normal, {len(lookup_agg)} aggressive")
-    return lookup, lookup_agg
+    print(f"  Prefix candidates: {len(_prefix_candidates)}")
+    return lookup, lookup_agg, _prefix_candidates
 
 
-def match_name(name, lookup, lookup_agg):
+def match_name(name, lookup, lookup_agg, prefix_candidates=None):
     """Try matching a name through all layers."""
     # Try normal normalization first
     k = normalize(name)
@@ -208,6 +222,17 @@ def match_name(name, lookup, lookup_agg):
     ka3 = re.sub(r'\s+(web services|labs?|technologies?|platforms?)\b.*$', '', ka).strip()
     if ka3 != ka and ka3 in lookup_agg:
         return lookup_agg[ka3]
+
+    # Layer 5: Prefix matching — "purdue university" matches
+    # "purdue university west lafayette" (pick highest cbc)
+    if prefix_candidates and len(k) >= 10:
+        best = None
+        for oa_name, (cbc, dn) in prefix_candidates.items():
+            if oa_name.startswith(k + ' ') and cbc > 0:
+                if best is None or cbc > best[0]:
+                    best = (cbc, dn, 'L5_prefix')
+        if best:
+            return best
 
     return None
 
@@ -316,7 +341,7 @@ def normalize_school(name):
     return s
 
 
-def compute_field(edges, lookup, lookup_agg, field, indeg_df, springrank_scores, llm_tiers=None):
+def compute_field(edges, lookup, lookup_agg, prefix_candidates, field, indeg_df, springrank_scores, llm_tiers=None):
     """Compute ranking for one field."""
     print(f"\n{'='*60}")
     print(f"  {field.upper()} v1.3")
@@ -348,7 +373,7 @@ def compute_field(edges, lookup, lookup_agg, field, indeg_df, springrank_scores,
     dest_cbc = {}
     match_stats = Counter()
     for d in unique_dests:
-        result = match_name(d, lookup, lookup_agg)
+        result = match_name(d, lookup, lookup_agg, prefix_candidates)
         if result:
             dest_cbc[d] = result[0]  # cited_by_count
             match_stats[result[2]] += 1
@@ -374,6 +399,30 @@ def compute_field(edges, lookup, lookup_agg, field, indeg_df, springrank_scores,
         edges['dest_prestige_norm'] = edges['dest_prestige'] / max_prestige
     else:
         edges['dest_prestige_norm'] = 0
+
+    # Impute D for unmatched destinations based on career tier
+    # Prevents systematic bias against schools sending grads to industry
+    matched_prest = edges.loc[edges['dest_prestige_norm'] > 0, 'dest_prestige_norm']
+    if len(matched_prest) > 0:
+        p10, p25, p50 = matched_prest.quantile([0.10, 0.25, 0.50]).values
+    else:
+        p10, p25, p50 = 0.1, 0.2, 0.4
+
+    TIER_IMPUTE = {
+        'tenure_track': p25,         # small university likely
+        'permanent_research': p25,
+        'industry_senior': p50,      # good company (Google/Meta level)
+        'industry_entry': p25,       # decent company
+        'government': p25,
+        'postdoc': p25,
+        'null_academic': p10,
+        'null_industry': p10,
+        'unknown': p10,
+    }
+    unmatched_mask = edges['dest_prestige_norm'] == 0
+    n_imputed = unmatched_mask.sum()
+    edges.loc[unmatched_mask, 'dest_prestige_norm'] = edges.loc[unmatched_mask, 'tier'].map(TIER_IMPUTE).fillna(p10)
+    print(f"  D-score imputed: {n_imputed} edges (industry_senior→P50={p50:.3f}, others→P25={p25:.3f})")
 
     edges['is_intl'] = (edges['dest_country'] != edges['phd_country']).astype(int)
     edges['D_i'] = edges['dest_prestige_norm'] * (1 + INTL_ALPHA * edges['is_intl'])
@@ -599,7 +648,7 @@ def main():
 
     # Build matching engine
     oa_csv = os.path.join(d, 'openalex_institutions.csv')
-    lookup, lookup_agg = build_matching_engine(oa_csv, args.ror_path)
+    lookup, lookup_agg, prefix_candidates = build_matching_engine(oa_csv, args.ror_path)
 
     # Load LLM tier mapping
     tier_csv = os.path.join(d, 'unique_roles_v3_classified.csv')
@@ -637,7 +686,7 @@ def main():
             continue
         try:
             edges = pd.read_parquet(parquet)
-            recs, grads = compute_field(edges, lookup, lookup_agg, field, indeg_df, springrank_scores, llm_tiers)
+            recs, grads = compute_field(edges, lookup, lookup_agg, prefix_candidates, field, indeg_df, springrank_scores, llm_tiers)
             all_json[field] = recs
             all_grads.update(grads)
         except Exception as e:
