@@ -341,7 +341,7 @@ def normalize_school(name):
     return s
 
 
-def compute_field(edges, dest_prestige, field, indeg_df, springrank_scores, llm_tiers=None):
+def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_scores, llm_tiers=None):
     """Compute ranking for one field."""
     print(f"\n{'='*60}")
     print(f"  {field.upper()} v1.3")
@@ -394,6 +394,7 @@ def compute_field(edges, dest_prestige, field, indeg_df, springrank_scores, llm_
     print(f"  Imputed: {n_imputed} edges (sr→P40={p40:.3f}, entry→P25={p25:.3f}, null→P10={p10:.3f})")
 
     edges['is_intl'] = (edges['dest_country'] != edges['phd_country']).astype(int)
+
     edges['D_i'] = edges['dest_prestige_norm'] * (1 + INTL_ALPHA * edges['is_intl'])
 
     # ── T score: tier × dest_prestige, with concentration cap ──
@@ -496,9 +497,22 @@ def compute_field(edges, dest_prestige, field, indeg_df, springrank_scores, llm_
         s['uplift_raw'].rank(pct=True)
     )
 
+    # ── Variance penalty ──
+    # Programs with inconsistent outcomes (some grads to MIT, others to unknown) are penalized
+    dest_var = edges.groupby(['phd_school', 'phd_country'])['dest_prestige_norm'].std().reset_index()
+    dest_var.columns = ['phd_school', 'phd_country', 'dest_var']
+    dest_mean = edges.groupby(['phd_school', 'phd_country'])['dest_prestige_norm'].mean().reset_index()
+    dest_mean.columns = ['phd_school', 'phd_country', 'dest_mean']
+    s = s.merge(dest_var, on=['phd_school', 'phd_country'], how='left')
+    s = s.merge(dest_mean, on=['phd_school', 'phd_country'], how='left')
+    # Coefficient of variation, capped
+    s['cv'] = (s['dest_var'] / s['dest_mean'].clip(lower=0.01)).clip(0, 2)
+    LAMBDA_VAR = 0.05  # variance penalty weight
+    s['var_penalty'] = LAMBDA_VAR * s['cv']
+
     # ── Composite ──
     w = WEIGHTS
-    s['composite'] = w['D'] * s['D'] + w['T'] * s['T'] + w['R'] * s['R'] + w['I'] * s['I']
+    s['composite'] = w['D'] * s['D'] + w['T'] * s['T'] + w['R'] * s['R'] + w['I'] * s['I'] - s['var_penalty']
     cmin, cmax = s['composite'].min(), s['composite'].max()
     s['score'] = ((s['composite'] - cmin) / (cmax - cmin) * 100).round(2)
 
@@ -643,6 +657,16 @@ def main():
         print(f"  WARNING: {sr_path} not found, falling back to indegree for prestige")
         springrank_scores = {}
 
+    # Load community assignments
+    comm_path = os.path.join(d, 'node_communities.json')
+    if os.path.exists(comm_path):
+        with open(comm_path, 'r') as f:
+            node_comms = json.load(f)
+        print(f"  Node communities: {len(node_comms):,} nodes")
+    else:
+        print(f"  WARNING: {comm_path} not found, no community discount")
+        node_comms = {}
+
     # Process each field
     all_json = {}
     all_grads = {}
@@ -657,7 +681,7 @@ def main():
             continue
         try:
             edges = pd.read_parquet(parquet)
-            recs, grads = compute_field(edges, dest_prestige, field, indeg_df, springrank_scores, llm_tiers)
+            recs, grads = compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_scores, llm_tiers)
             all_json[field] = recs
             all_grads.update(grads)
         except Exception as e:
