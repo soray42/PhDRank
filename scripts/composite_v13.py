@@ -469,8 +469,14 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     mu_T = s['T_raw'].mean()
     s['T'] = (s['n'] * s['T_raw'] + SHRINKAGE_K * mu_T) / (s['n'] + SHRINKAGE_K)
 
-    # ── R score: return penalty ──
-    s['R'] = (1.0 - 0.7 * s['self_ret']).clip(0, 1)
+    # ── R score: return penalty (exempt prestigious schools) ──
+    # Self-hire at MIT/Stanford is a prestige signal, not nepotism
+    s['school_springrank'] = s['phd_school'].map(springrank_scores).fillna(0)
+    sr_vals = list(springrank_scores.values())
+    sr_p80 = np.percentile(sr_vals, 80) if sr_vals else 0
+    # Scale penalty: prestigious schools (top-20% SR) get 0 penalty, others get full
+    s['sr_prestige'] = ((s['school_springrank'] - sr_p80) / (max(sr_vals) - sr_p80 + 1e-10)).clip(0, 1)
+    s['R'] = (1.0 - 0.7 * s['self_ret'] * (1 - s['sr_prestige'])).clip(0, 1)
 
     # ── I score: dual regime using SpringRank prestige ──
     # SpringRank on global placement network: size-independent prestige
