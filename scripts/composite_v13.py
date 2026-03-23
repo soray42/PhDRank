@@ -341,7 +341,7 @@ def normalize_school(name):
     return s
 
 
-def compute_field(edges, lookup, lookup_agg, prefix_candidates, field, indeg_df, springrank_scores, llm_tiers=None):
+def compute_field(edges, dest_prestige, field, indeg_df, springrank_scores, llm_tiers=None):
     """Compute ranking for one field."""
     print(f"\n{'='*60}")
     print(f"  {field.upper()} v1.3")
@@ -368,61 +368,30 @@ def compute_field(edges, lookup, lookup_agg, prefix_candidates, field, indeg_df,
     print(f"  Excluded {fe_count} further_education edges")
     print(f"  After: {len(edges):,} edges, {edges['person_orcid'].nunique():,} graduates")
 
-    # ── Match destinations to OpenAlex cited_by_count ──
-    unique_dests = edges['dest'].dropna().unique()
-    dest_cbc = {}
-    match_stats = Counter()
-    for d in unique_dests:
-        result = match_name(d, lookup, lookup_agg, prefix_candidates)
-        if result:
-            dest_cbc[d] = result[0]  # cited_by_count
-            match_stats[result[2]] += 1
-        else:
-            dest_cbc[d] = 0
-            match_stats['unmatched'] += 1
+    # ── D score: SpringRank-based dest prestige ──
+    # Uses log(indegree) × source_quality — no OpenAlex needed
+    edges['dest_prestige_norm'] = edges['dest'].map(dest_prestige).fillna(0)
+    matched = (edges['dest_prestige_norm'] > 0).sum()
+    print(f"\n  Dest prestige coverage: {matched}/{len(edges)} ({100*matched/len(edges):.1f}%)")
 
-    matched = sum(1 for v in dest_cbc.values() if v > 0)
-    total = len(dest_cbc)
-    print(f"\n  Destination matching: {matched}/{total} ({100*matched/total:.1f}%)")
-    for layer, count in match_stats.most_common():
-        print(f"    {layer}: {count}")
-
-    # Frequency-weighted match rate
-    edges['dest_cbc'] = edges['dest'].map(dest_cbc).fillna(0)
-    freq_matched = (edges['dest_cbc'] > 0).sum()
-    print(f"  Freq-weighted: {freq_matched}/{len(edges)} ({100*freq_matched/len(edges):.1f}%)")
-
-    # ── D score: cited_by_count percentile × intl premium ──
-    edges['dest_prestige'] = edges['dest_cbc'].apply(lambda x: np.log1p(x))
-    max_prestige = edges['dest_prestige'].max()
-    if max_prestige > 0:
-        edges['dest_prestige_norm'] = edges['dest_prestige'] / max_prestige
+    # Impute remaining unmatched by career tier (small companies/startups)
+    matched_vals = edges.loc[edges['dest_prestige_norm'] > 0, 'dest_prestige_norm']
+    if len(matched_vals) > 0:
+        p10 = matched_vals.quantile(0.10)
+        p25 = matched_vals.quantile(0.25)
+        p40 = matched_vals.quantile(0.40)
     else:
-        edges['dest_prestige_norm'] = 0
-
-    # Impute D for unmatched destinations based on career tier
-    # Prevents systematic bias against schools sending grads to industry
-    matched_prest = edges.loc[edges['dest_prestige_norm'] > 0, 'dest_prestige_norm']
-    if len(matched_prest) > 0:
-        p10, p25, p50 = matched_prest.quantile([0.10, 0.25, 0.50]).values
-    else:
-        p10, p25, p50 = 0.1, 0.2, 0.4
-
+        p10, p25, p40 = 0.1, 0.2, 0.3
     TIER_IMPUTE = {
-        'tenure_track': p25,         # small university likely
-        'permanent_research': p25,
-        'industry_senior': p50,      # good company (Google/Meta level)
-        'industry_entry': p25,       # decent company
-        'government': p25,
-        'postdoc': p25,
-        'null_academic': p10,
-        'null_industry': p10,
-        'unknown': p10,
+        'tenure_track': p25, 'permanent_research': p25,
+        'industry_senior': p40, 'industry_entry': p25,
+        'government': p25, 'postdoc': p25,
+        'null_academic': p10, 'null_industry': p10, 'unknown': p10,
     }
     unmatched_mask = edges['dest_prestige_norm'] == 0
     n_imputed = unmatched_mask.sum()
     edges.loc[unmatched_mask, 'dest_prestige_norm'] = edges.loc[unmatched_mask, 'tier'].map(TIER_IMPUTE).fillna(p10)
-    print(f"  D-score imputed: {n_imputed} edges (industry_senior→P50={p50:.3f}, others→P25={p25:.3f})")
+    print(f"  Imputed: {n_imputed} edges (sr→P40={p40:.3f}, entry→P25={p25:.3f}, null→P10={p10:.3f})")
 
     edges['is_intl'] = (edges['dest_country'] != edges['phd_country']).astype(int)
     edges['D_i'] = edges['dest_prestige_norm'] * (1 + INTL_ALPHA * edges['is_intl'])
@@ -646,9 +615,11 @@ def main():
     print("PhDRank v1.3 — ROR-enhanced name resolution")
     print("=" * 60)
 
-    # Build matching engine
-    oa_csv = os.path.join(d, 'openalex_institutions.csv')
-    lookup, lookup_agg, prefix_candidates = build_matching_engine(oa_csv, args.ror_path)
+    # Load dest prestige (SpringRank-based, 100% coverage)
+    dp_path = os.path.join(d, 'dest_prestige_sr.json')
+    with open(dp_path, 'r') as f:
+        dest_prestige = json.load(f)
+    print(f"  Dest prestige: {len(dest_prestige):,} destinations (SpringRank-based)")
 
     # Load LLM tier mapping
     tier_csv = os.path.join(d, 'unique_roles_v3_classified.csv')
@@ -686,7 +657,7 @@ def main():
             continue
         try:
             edges = pd.read_parquet(parquet)
-            recs, grads = compute_field(edges, lookup, lookup_agg, prefix_candidates, field, indeg_df, springrank_scores, llm_tiers)
+            recs, grads = compute_field(edges, dest_prestige, field, indeg_df, springrank_scores, llm_tiers)
             all_json[field] = recs
             all_grads.update(grads)
         except Exception as e:
