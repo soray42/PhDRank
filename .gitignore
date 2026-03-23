@@ -3,3 +3,7 @@ __pycache__/
 .DS_Store
 *.parquet
 node_modules/
+.omc/
+ror-data/
+org_to_ror_mapping.csv
+orgs_extracted.csv

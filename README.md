@@ -4,7 +4,7 @@ An open, data-driven ranking of PhD programs by **where their graduates actually
 
 Built on [ORCID](https://orcid.org/) public data (CC-BY 4.0) via the [Zenodo dataset](https://doi.org/10.5281/zenodo.17983291) by Yifeng Li.
 
-**Live site**: [https://phdrank.github.io](https://phdrank.github.io)
+**Live site**: [https://soray42.github.io/PhDRank/](https://soray42.github.io/PhDRank/)
 
 ## What makes this different
 
@@ -16,38 +16,45 @@ Built on [ORCID](https://orcid.org/) public data (CC-BY 4.0) via the [Zenodo dat
 | Career paths | Academic + Industry + Policy | Academic only | N/A | N/A |
 | Reproducible | Fully open source | Partially | No | No |
 
-## Methodology (v0.8)
+## Methodology (v1.2)
 
 Each PhD program is scored on 4 dimensions:
 
-- **D (Destination Prestige, 40%)** — Where do graduates go? Measured by global employer prestige derived from 820k education→employment transitions across all fields.
-- **T (Career Tier, 35%)** — What do graduates do? Tenure-track faculty (1.0), permanent researcher (0.85), senior industry (0.80), postdoc (0.50), etc.
+- **D (Destination Prestige, 40%)** — OpenAlex `cited_by_count` percentile of each graduate's destination institution, with a 30% international premium.
+- **T (Career Tier, 35%)** — LLM-classified role tier (tenure-track 1.0, permanent research 0.85, senior industry 0.80, postdoc 0.50, etc.), weighted by destination prestige. Employer concentration capped at 10%.
 - **R (Return Penalty, 10%)** — Self-hire discount. Programs that predominantly employ their own graduates are penalized.
-- **I (Quality Index, 15%)** — Dual-regime: for prestigious programs, measures retention rate (% of graduates landing at equally prestigious destinations); for others, measures value-added uplift.
+- **I (Quality Index, 15%)** — Dual-regime: top-10% prestigious programs are scored on retention rate; others on value-added uplift.
 
 Key design choices:
-- **PhD-only edges**: Only doctoral-level graduates, filtered by `role_from` keyword matching
-- **Global employer prestige**: log(inflow) × avg(source quality) across 820k people, 52k employers
-- **Bayesian shrinkage**: Small programs regress toward field mean (k=20)
-- **Dual-regime I score**: Top-20% programs assessed on retention, others on uplift
+- **Inverted PhD filter**: exclude bachelor/master/intern edges, keep everything else
+- **10-year window**: graduates from 2016-2025
+- **Further education excluded**: edges to another degree program are not placements
+- **Global employer prestige**: OpenAlex cited_by_count as universal signal
+- **Bayesian shrinkage**: Small programs regress toward field mean (k=20, min N=15)
+- **LLM-classified tiers**: 14,239 unique role strings classified, 0.1% unknown
 
 ## Fields covered
 
-- Computer Science (498 programs)
-- Economics (321 programs)
-- Mathematics (291 programs)
+- Computer Science (247 programs)
+- Economics (97 programs)
+- Mathematics (90 programs)
 
-More fields coming: Statistics, Physics, Finance, Biology.
+**Total: 434 ranked programs across 3 fields.**
+
+More fields planned: Statistics, Physics, Finance, Biology.
 
 ## Data pipeline
 
 ```
 ORCID Public Data (Zenodo, 11M edges)
-    │
-    ├─ extract_phd.sql ──→ PhD-only field edges (phd_cs/econ/math.parquet)
-    ├─ extract_inflow.sql → Global employment inflow (global_emp_inflow.parquet)
-    │
-    └─ composite_v08.py ─→ ranking_v08.json ─→ index.html (static site)
+    |
+    +-- extract_v3.sql --> PhD-only field edges (phd3_cs/econ/math.parquet)
+    |
+    +-- OpenAlex S3 snapshot --> openalex_institutions.csv (120k institutions)
+    |
+    +-- unique_roles_v3_classified.csv (LLM-classified tiers)
+    |
+    +-- composite_v12.py --> ranking_v12.json --> docs/data.json (static site)
 ```
 
 ## Local development
@@ -56,27 +63,26 @@ ORCID Public Data (Zenodo, 11M edges)
 # 1. Download ORCID data from Zenodo
 #    DOI: 10.5281/zenodo.17983291 (16.5GB 7z)
 
-# 2. Extract PhD edges
-duckdb < scripts/extract_phd.sql
+# 2. Extract PhD edges (DuckDB)
+duckdb < extract_v3.sql
 
-# 3. Extract global inflow network
-duckdb < scripts/extract_inflow.sql
+# 3. Compute rankings
+pip install pandas numpy pyarrow scipy
+python composite_v12.py
 
-# 4. Compute rankings
-pip install pandas numpy pyarrow scipy springrank
-python scripts/composite_v08.py
-
-# 5. Serve locally
-cd site && python -m http.server 8000
+# 4. Serve locally
+cd docs && python -m http.server 8000
 ```
 
 ## Roadmap
 
 - [x] v0.8: Global employer prestige + career tier + return penalty + dual-regime quality
-- [ ] v0.9: OpenAlex integration for industry prestige (cited_by_count as universal signal)
-- [ ] v1.0: Professor-level and lab-level placement data
-- [ ] v1.1: Temporal trends (5-year rolling windows)
-- [ ] v1.2: Interactive filters (by country, career path, destination type)
+- [x] v0.9: LLM-classified tiers, 10yr window, inverted PhD filter
+- [x] v1.0: International premium + NULL imputation + LLM tiers
+- [x] v1.2: OpenAlex cited_by_count as D score
+- [ ] v1.3: ROR name resolution (match rate 47% -> 80%+)
+- [ ] v1.4: XOR model (Iacovissi & De Bacco 2022) + placement variance penalty
+- [ ] v2.0: Temporal trends, head-to-head comparisons, per-graduate ORCID links
 
 ## Citation
 
@@ -85,9 +91,9 @@ If you use this data or methodology, please cite:
 ```
 @misc{phdrank2026,
   title={PhDRank: Global PhD Program Placement Rankings},
-  author={[TBD]},
+  author={Sora},
   year={2026},
-  url={https://github.com/phdrank/phdrank}
+  url={https://github.com/soray42/PhDRank}
 }
 ```
 
