@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PhDRank — Global PhD Placement Rankings</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0b;
+  --surface: #141416;
+  --surface2: #1c1c20;
+  --border: #2a2a30;
+  --text: #e4e4e7;
+  --text2: #a1a1aa;
+  --text3: #71717a;
+  --accent: #3b82f6;
+  --accent2: #60a5fa;
+  --green: #22c55e;
+  --amber: #f59e0b;
+  --red: #ef4444;
+  --font: 'IBM Plex Sans', -apple-system, sans-serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--font); background:var(--bg); color:var(--text); line-height:1.5; }
+a { color:var(--accent2); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Header */
+.header { border-bottom:1px solid var(--border); padding:1.5rem 2rem; display:flex; align-items:center; justify-content:space-between; }
+.logo { font-size:1.4rem; font-weight:700; letter-spacing:-0.03em; }
+.logo span { color:var(--accent); }
+.header-links { display:flex; gap:1.5rem; font-size:0.85rem; color:var(--text2); }
+.header-links a { color:var(--text2); }
+
+/* Hero */
+.hero { padding:3rem 2rem 2rem; max-width:900px; }
+.hero h1 { font-size:2rem; font-weight:700; letter-spacing:-0.03em; margin-bottom:0.5rem; }
+.hero p { color:var(--text2); font-size:1rem; max-width:650px; }
+
+/* Controls */
+.controls { padding:0 2rem 1.5rem; display:flex; gap:1rem; flex-wrap:wrap; align-items:center; }
+.field-tabs { display:flex; gap:0; border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+.field-tab { padding:0.5rem 1.2rem; font-size:0.85rem; font-weight:500; background:transparent; color:var(--text2); border:none; cursor:pointer; transition:all 0.15s; }
+.field-tab:hover { color:var(--text); background:var(--surface2); }
+.field-tab.active { background:var(--accent); color:#fff; }
+.search-box { padding:0.5rem 1rem; background:var(--surface); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:0.85rem; font-family:var(--font); width:280px; outline:none; }
+.search-box:focus { border-color:var(--accent); }
+.search-box::placeholder { color:var(--text3); }
+.stat-pill { padding:0.35rem 0.8rem; background:var(--surface2); border-radius:6px; font-size:0.8rem; color:var(--text2); font-family:var(--mono); }
+
+/* Table */
+.table-wrap { padding:0 2rem 3rem; overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+thead th { text-align:left; padding:0.6rem 0.8rem; color:var(--text3); font-weight:500; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; border-bottom:1px solid var(--border); cursor:pointer; white-space:nowrap; user-select:none; }
+thead th:hover { color:var(--text); }
+thead th.sort-asc::after { content:' ▲'; font-size:0.6rem; }
+thead th.sort-desc::after { content:' ▼'; font-size:0.6rem; }
+tbody tr { border-bottom:1px solid var(--border); transition:background 0.1s; }
+tbody tr:hover { background:var(--surface); }
+tbody td { padding:0.6rem 0.8rem; white-space:nowrap; }
+td.rank { font-family:var(--mono); font-weight:600; color:var(--text3); width:3rem; }
+td.school { font-weight:500; max-width:320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+td.school .pres { color:var(--amber); font-size:0.7rem; margin-left:0.3rem; }
+td.country { font-size:0.8rem; color:var(--text2); text-transform:uppercase; font-family:var(--mono); }
+td.num { font-family:var(--mono); text-align:right; }
+td.score { font-weight:600; color:var(--accent2); }
+td.bar-cell { width:120px; }
+.bar-bg { background:var(--surface2); border-radius:3px; height:6px; width:100px; position:relative; }
+.bar-fill { position:absolute; left:0; top:0; height:100%; border-radius:3px; }
+.bar-D { background:var(--accent); }
+.bar-T { background:var(--green); }
+.bar-I { background:var(--amber); }
+
+/* Expand row */
+.detail-row { display:none; }
+.detail-row.open { display:table-row; }
+.detail-row td { padding:1rem 0.8rem 1rem 3.5rem; background:var(--surface); }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; max-width:700px; }
+.detail-section h4 { font-size:0.75rem; text-transform:uppercase; color:var(--text3); margin-bottom:0.4rem; letter-spacing:0.05em; }
+.detail-section p { font-size:0.85rem; }
+.dest-list { list-style:none; font-size:0.82rem; }
+.dest-list li { padding:0.15rem 0; display:flex; justify-content:space-between; }
+.dest-list .cnt { color:var(--text3); font-family:var(--mono); }
+.tier-bar { display:flex; height:8px; border-radius:4px; overflow:hidden; margin-top:0.3rem; gap:1px; }
+.tier-bar div { height:100%; }
+.tier-tt { background:#22c55e; }
+.tier-pd { background:#f59e0b; }
+.tier-ind { background:#3b82f6; }
+.tier-oth { background:#52525b; }
+
+/* Footer */
+.footer { border-top:1px solid var(--border); padding:2rem; color:var(--text3); font-size:0.8rem; display:flex; justify-content:space-between; }
+
+/* Responsive */
+@media (max-width:768px) {
+  .hero h1 { font-size:1.4rem; }
+  .controls { flex-direction:column; }
+  .search-box { width:100%; }
+  .detail-grid { grid-template-columns:1fr; }
+  .header { flex-direction:column; gap:0.5rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">PhD<span>Rank</span></div>
+  <div class="header-links">
+    <a href="https://github.com/phdrank/phdrank">GitHub</a>
+    <a href="#methodology">Methodology</a>
+    <a href="https://doi.org/10.5281/zenodo.17983291">Data Source</a>
+  </div>
+</div>
+
+<div class="hero">
+  <h1>Where do PhD graduates actually end up?</h1>
+  <p>Rankings based on verified career outcomes from ORCID public data. Not surveys, not reputation — real placement records for 73,000+ doctoral graduates worldwide.</p>
+</div>
+
+<div class="controls">
+  <div class="field-tabs">
+    <button class="field-tab active" data-field="cs">Computer Science</button>
+    <button class="field-tab" data-field="econ">Economics</button>
+    <button class="field-tab" data-field="math">Mathematics</button>
+  </div>
+  <input type="text" class="search-box" placeholder="Search programs..." id="search">
+  <div class="stat-pill" id="stat-pill">—</div>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th data-col="r" data-type="num">#</th>
+      <th data-col="s" data-type="str">Program</th>
+      <th data-col="c" data-type="str">Country</th>
+      <th data-col="n" data-type="num">N</th>
+      <th data-col="sc" data-type="num">Score</th>
+      <th data-col="D" data-type="num">Dest.</th>
+      <th data-col="T" data-type="num">Career</th>
+      <th data-col="I" data-type="num">Quality</th>
+      <th data-col="tt" data-type="num">TT%</th>
+      <th data-col="pd" data-type="num">PD%</th>
+      <th data-col="ind" data-type="num">Ind%</th>
+    </tr>
+  </thead>
+  <tbody id="tbody"></tbody>
+</table>
+</div>
+
+<div class="footer" id="methodology">
+  <div>
+    <strong>PhDRank v0.8</strong> — Data: ORCID Public Data (CC-BY 4.0) via Zenodo.
+    Composite score: D(40%) + T(35%) + R(10%) + I(15%). PhD-only edges filtered by role keywords.
+    Min N=15. Bayesian shrinkage k=20. Updated 2026-H1.
+  </div>
+  <div>Built by <a href="https://soray42.github.io">Sora</a></div>
+</div>
+
+<script>
+let DATA = {};
+let currentField = 'cs';
+let sortCol = 'r';
+let sortAsc = true;
+
+async function loadData() {
+  const r = await fetch('data.json');
+  DATA = await r.json();
+  render();
+}
+
+function render() {
+  const q = document.getElementById('search').value.toLowerCase();
+  let rows = DATA[currentField] || [];
+  if (q) rows = rows.filter(r => r.s.includes(q) || (r.c||'').includes(q));
+
+  // Sort
+  rows = [...rows].sort((a,b) => {
+    let va = a[sortCol], vb = b[sortCol];
+    if (typeof va === 'string') { va = va.toLowerCase(); vb = (vb||'').toLowerCase(); }
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  document.getElementById('stat-pill').textContent = `${rows.length} programs`;
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.style.cursor = 'pointer';
+    const pres = r.pr ? '<span class="pres">★</span>' : '';
+    const name = r.s.replace(/\b\w/g, l => l.toUpperCase());
+    tr.innerHTML = `
+      <td class="rank num">${r.r}</td>
+      <td class="school" title="${r.s}">${name}${pres}</td>
+      <td class="country">${(r.c||'').toUpperCase()}</td>
+      <td class="num">${r.n}</td>
+      <td class="num score">${r.sc.toFixed(1)}</td>
+      <td class="num">${r.D.toFixed(3)}</td>
+      <td class="num">${r.T.toFixed(3)}</td>
+      <td class="num">${r.I.toFixed(3)}</td>
+      <td class="num">${r.tt.toFixed(0)}%</td>
+      <td class="num">${r.pd.toFixed(0)}%</td>
+      <td class="num">${r.ind.toFixed(0)}%</td>
+    `;
+
+    // Detail row
+    const detailTr = document.createElement('tr');
+    detailTr.className = 'detail-row';
+    const tierTotal = (r.tt||0) + (r.pd||0) + (r.ind||0);
+    const oth = Math.max(0, 100 - tierTotal);
+    const dests = (r.td||[]).map(d =>
+      `<li><span>${d.o.replace(/\b\w/g, l=>l.toUpperCase())}</span><span class="cnt">${d.n}</span></li>`
+    ).join('');
+
+    detailTr.innerHTML = `<td colspan="11">
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h4>Top Destinations</h4>
+          <ul class="dest-list">${dests || '<li>—</li>'}</ul>
+        </div>
+        <div class="detail-section">
+          <h4>Career Breakdown</h4>
+          <div class="tier-bar">
+            <div class="tier-tt" style="width:${r.tt}%"></div>
+            <div class="tier-pd" style="width:${r.pd}%"></div>
+            <div class="tier-ind" style="width:${r.ind}%"></div>
+            <div class="tier-oth" style="width:${oth}%"></div>
+          </div>
+          <p style="margin-top:0.4rem;font-size:0.78rem;color:var(--text3)">
+            <span style="color:#22c55e">■</span> Faculty ${r.tt.toFixed(0)}%
+            <span style="color:#f59e0b">■</span> Postdoc ${r.pd.toFixed(0)}%
+            <span style="color:#3b82f6">■</span> Industry ${r.ind.toFixed(0)}%
+            <span style="color:#52525b">■</span> Other ${oth.toFixed(0)}%
+          </p>
+        </div>
+        <div class="detail-section">
+          <h4>Sub-scores</h4>
+          <p>Destination: <strong>${r.D.toFixed(3)}</strong></p>
+          <p>Career Tier: <strong>${r.T.toFixed(3)}</strong></p>
+          <p>Return Adj: <strong>${(r.R||1).toFixed(3)}</strong></p>
+          <p>Quality: <strong>${r.I.toFixed(3)}</strong></p>
+          <p style="margin-top:0.3rem;color:var(--text3);font-size:0.78rem">
+            Intl rate: ${r.pi.toFixed(0)}% · N=${r.n} graduates
+            ${r.pr ? ' · ★ Prestigious regime' : ''}
+          </p>
+        </div>
+      </div>
+    </td>`;
+
+    tr.addEventListener('click', () => {
+      detailTr.classList.toggle('open');
+    });
+
+    tbody.appendChild(tr);
+    tbody.appendChild(detailTr);
+  });
+}
+
+// Field tabs
+document.querySelectorAll('.field-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.field-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentField = btn.dataset.field;
+    render();
+  });
+});
+
+// Search
+document.getElementById('search').addEventListener('input', render);
+
+// Sort
+document.querySelectorAll('thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) { sortAsc = !sortAsc; }
+    else { sortCol = col; sortAsc = th.dataset.type === 'num'; }
+    document.querySelectorAll('thead th').forEach(t => t.classList.remove('sort-asc','sort-desc'));
+    th.classList.add(sortAsc ? 'sort-asc' : 'sort-desc');
+    render();
+  });
+});
+
+loadData();
+</script>
+</body>
+</html>
