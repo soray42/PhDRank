@@ -263,6 +263,16 @@ def classify_tier_fallback(role_to, dest_type, dest):
     dtype = str(dest_type).lower().strip() if pd.notna(dest_type) else ''
     org = str(dest).lower().strip() if pd.notna(dest) else ''
 
+    # Direct category mapping (from external data like econphdplacements.com)
+    DIRECT_MAP = {
+        'tenure_track': 'tenure_track', 'private_sector': 'industry_entry',
+        'other_academic': 'postdoc', 'central_banks': 'government',
+        'international_orgs': 'government', 'government': 'government',
+        'think_tanks': 'permanent_research',
+    }
+    if role in DIRECT_MAP:
+        return DIRECT_MAP[role]
+
     if dtype == 'education':
         if any(k in role for k in ['phd', 'doctor', 'master', 'student', 'bachelor']):
             return 'further_education'
@@ -382,11 +392,16 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
         p40 = matched_vals.quantile(0.40)
     else:
         p10, p25, p40 = 0.1, 0.2, 0.3
+    p50 = matched_vals.quantile(0.50) if len(matched_vals) > 0 else 0.35
+    p60 = matched_vals.quantile(0.60) if len(matched_vals) > 0 else 0.45
     TIER_IMPUTE = {
-        'tenure_track': p25, 'permanent_research': p25,
-        'industry_senior': p40, 'industry_entry': p25,
-        'government': p25, 'postdoc': p25,
-        'null_academic': p10, 'null_industry': p10, 'unknown': p10,
+        'tenure_track': p60,           # TT job = above median outcome
+        'permanent_research': p50,
+        'industry_senior': p50,        # selective companies
+        'industry_entry': p40,         # consulting/tech
+        'government': p50,             # central banks, IMF etc.
+        'postdoc': p40,
+        'null_academic': p25, 'null_industry': p25, 'unknown': p10,
     }
     unmatched_mask = edges['dest_prestige_norm'] == 0
     n_imputed = unmatched_mask.sum()
