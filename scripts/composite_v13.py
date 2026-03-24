@@ -34,21 +34,64 @@ from collections import Counter
 
 MIN_N = 15
 SHRINKAGE_K = 40
-WEIGHTS = {'D': 0.40, 'T': 0.35, 'R': 0.10, 'I': 0.15}
 INTL_ALPHA = 0.3  # international premium
 CONC_CAP = 0.10   # employer concentration cap
 
-TIER_SCORES = {
-    'tenure_track': 1.0,
-    'permanent_research': 0.85,
-    'industry_senior': 0.80,
-    'government': 0.75,
-    'industry_entry': 0.65,
-    'postdoc': 0.50,
-    'null_academic': 0.70,
-    'null_industry': 0.65,
-    'unknown': 0.50,
+# Default scoring config
+DEFAULT_CONFIG = {
+    'weights': {'D': 0.40, 'T': 0.35, 'R': 0.10, 'I': 0.15},
+    'tier_scores': {
+        'tenure_track': 1.0, 'permanent_research': 0.85, 'industry_senior': 0.80,
+        'government': 0.75, 'industry_entry': 0.65, 'postdoc': 0.50,
+        'null_academic': 0.70, 'null_industry': 0.65, 'unknown': 0.50,
+    },
 }
+
+# Field-specific overrides
+FIELD_CONFIGS = {
+    'cs': {
+        'tier_scores': {
+            'tenure_track': 1.0, 'permanent_research': 0.85,
+            'industry_senior': 0.90,   # CS values senior industry highly (Google L6+)
+            'government': 0.75, 'industry_entry': 0.70,  # CS industry entry is competitive
+            'postdoc': 0.50,
+            'null_academic': 0.70, 'null_industry': 0.70, 'unknown': 0.50,
+        },
+    },
+    'econ': {
+        'tier_scores': {
+            'tenure_track': 1.0, 'permanent_research': 0.85,
+            'industry_senior': 0.80, 'government': 0.85,  # econ values central banks/policy
+            'industry_entry': 0.70,  # econ consulting is selective
+            'postdoc': 0.50,
+            'null_academic': 0.70, 'null_industry': 0.65, 'unknown': 0.50,
+        },
+    },
+    'math': {
+        'tier_scores': {
+            'tenure_track': 1.0, 'permanent_research': 0.90,  # math research positions are top-tier
+            'industry_senior': 0.80, 'government': 0.75,
+            'industry_entry': 0.65,
+            'postdoc': 0.70,  # postdoc is the STANDARD math career path, not a penalty
+            'null_academic': 0.75, 'null_industry': 0.60, 'unknown': 0.50,
+        },
+    },
+}
+
+def get_field_config(field):
+    """Get merged config for a field (field-specific overrides on top of defaults)."""
+    config = {k: dict(v) if isinstance(v, dict) else v for k, v in DEFAULT_CONFIG.items()}
+    if field in FIELD_CONFIGS:
+        for k, v in FIELD_CONFIGS[field].items():
+            if isinstance(v, dict):
+                config[k] = {**config.get(k, {}), **v}
+            else:
+                config[k] = v
+    return config
+
+# Keep backward compat
+WEIGHTS = DEFAULT_CONFIG['weights']
+TIER_SCORES = DEFAULT_CONFIG['tier_scores']
 
 # Corporate suffixes to strip
 CORP_SUFFIXES = re.compile(
@@ -401,8 +444,13 @@ def normalize_school(name):
 
 def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_scores, llm_tiers=None):
     """Compute ranking for one field."""
+    # Get field-specific config
+    field_cfg = get_field_config(field)
+    field_tiers = field_cfg['tier_scores']
+    field_weights = field_cfg['weights']
+
     print(f"\n{'='*60}")
-    print(f"  {field.upper()} v1.3")
+    print(f"  {field.upper()} v1.3 (postdoc={field_tiers['postdoc']}, ind_sr={field_tiers['industry_senior']})")
     print(f"{'='*60}")
 
     # ── Normalize school and dest names to deduplicate ──
@@ -500,7 +548,7 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     edges['D_i'] = edges['dest_prestige_norm'] * edges['edge_quality'] * (1 + INTL_ALPHA * edges['is_intl'])
 
     # ── T score: tier × dest_prestige, with concentration cap ──
-    edges['T_i'] = edges['tier'].map(TIER_SCORES).fillna(0.5)
+    edges['T_i'] = edges['tier'].map(field_tiers).fillna(0.5)
     edges['T_weighted'] = edges['T_i'] * (0.5 + 0.5 * edges['dest_prestige_norm'])
 
     # ── Flags (compute with normalized names) ──
@@ -602,14 +650,14 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     tier_div = edges.groupby(['phd_school', 'phd_country'])['tier'].nunique().reset_index()
     tier_div.columns = ['phd_school', 'phd_country', 'n_tiers']
     s = s.merge(tier_div, on=['phd_school', 'phd_country'], how='left')
-    s['tier_diversity'] = (s['n_tiers'] / len(TIER_SCORES)).clip(0, 1)
+    s['tier_diversity'] = (s['n_tiers'] / len(field_tiers)).clip(0, 1)
     # Variety = 0.7*dest_entropy + 0.3*tier_diversity
     s['variety'] = 0.7 * s['dest_entropy'].fillna(0.5) + 0.3 * s['tier_diversity'].fillna(0.3)
     LAMBDA_VAR = 0.05
     s['variety_bonus'] = LAMBDA_VAR * s['variety']
 
     # ── Composite ──
-    w = WEIGHTS
+    w = field_weights
     s['composite'] = w['D'] * s['D'] + w['T'] * s['T'] + w['R'] * s['R'] + w['I'] * s['I'] + s['variety_bonus']
     cmin, cmax = s['composite'].min(), s['composite'].max()
     s['score'] = ((s['composite'] - cmin) / (cmax - cmin) * 100).round(2)
@@ -621,11 +669,11 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     # ── Tier percentages ──
     tb = edges.groupby(['phd_school', 'phd_country', 'tier'])['person_orcid'].nunique()
     tb = tb.unstack(fill_value=0).reset_index()
-    for t in TIER_SCORES:
+    for t in field_tiers:
         if t not in tb.columns:
             tb[t] = 0
     rk = rk.merge(tb, on=['phd_school', 'phd_country'], how='left')
-    for t in TIER_SCORES:
+    for t in field_tiers:
         if t in rk.columns:
             rk[f'pct_{t}'] = (rk[t] / rk['n'] * 100).round(1)
 
