@@ -4,203 +4,1197 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PhDRank — Global PhD Placement Rankings</title>
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Source+Sans+3:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root{
+:root {
   /* 和色 — Traditional Japanese Colors */
-  --sumi:#1b1a17;        /* 墨 ink black */
-  --sumi2:#24231f;       /* 墨色 warm black */
-  --kitsune:#8d6449;     /* 狐 fox brown */
-  --torinoko:#f7f0e3;    /* 鳥の子 eggshell cream */
-  --kinari:#ece4d4;      /* 生成 natural silk */
+  --sumi:     #1b1a17;   /* 墨 ink black */
+  --sumi2:    #24231f;   /* 墨色 warm black */
+  --kitsune:  #8d6449;   /* 狐 fox brown */
+  --torinoko: #f7f0e3;   /* 鳥の子 eggshell cream */
+  --kinari:   #ece4d4;   /* 生成 natural silk */
   --shironeri:#faf8f5;   /* 白練 white silk */
-  --hai:#7d7b77;         /* 灰 ash gray */
-  --nezumi:#656461;      /* 鼠 mouse gray */
-  --ai:#2e5c6e;          /* 藍 indigo */
-  --asagi:#48929b;       /* 浅葱 light blue-green */
-  --kurenai:#c73e3a;     /* 紅 crimson */
-  --matcha:#6b9362;      /* 抹茶 matcha green */
-  --uguisu:#6c6024;      /* 鶯 warbler olive */
-  --kohaku:#ca8269;      /* 琥珀 amber */
-  --fuji:#8b81c3;        /* 藤 wisteria purple */
-  --kogecha:#42382b;     /* 焦茶 dark brown */
-  --usuzumi:#9e9b95;     /* 薄墨 light ink */
+  --hai:      #7d7b77;   /* 灰 ash gray */
+  --nezumi:   #656461;   /* 鼠 mouse gray */
+  --ai:       #2e5c6e;   /* 藍 indigo */
+  --asagi:    #48929b;   /* 浅葱 light blue-green */
+  --kurenai:  #c73e3a;   /* 紅 crimson */
+  --matcha:   #6b9362;   /* 抹茶 matcha green */
+  --uguisu:   #6c6024;   /* 鶯 warbler olive */
+  --kohaku:   #ca8269;   /* 琥珀 amber */
+  --fuji:     #8b81c3;   /* 藤 wisteria purple */
+  --kogecha:  #42382b;   /* 焦茶 dark brown */
+  --usuzumi:  #9e9b95;   /* 薄墨 light ink */
 
-  --bg:var(--sumi);
-  --s1:var(--sumi2);
-  --s2:#2d2b26;
-  --s3:#3d3a33;
-  --t1:var(--torinoko);
-  --t2:var(--kinari);
-  --t3:var(--usuzumi);
-  --t4:var(--hai);
-  --accent:var(--ai);
-  --accent2:var(--asagi);
-  --red:var(--kurenai);
-  --green:var(--matcha);
-  --gold:var(--uguisu);
+  --bg:    var(--sumi);
+  --s1:    var(--sumi2);
+  --s2:    #2d2b26;
+  --s3:    #3d3a33;
+  --s4:    #4e4a42;
+  --t1:    var(--torinoko);
+  --t2:    var(--kinari);
+  --t3:    var(--usuzumi);
+  --t4:    var(--hai);
+  --accent:  var(--ai);
+  --accent2: var(--asagi);
+  --red:     var(--kurenai);
+  --green:   var(--matcha);
+  --gold:    var(--uguisu);
 
-  --serif:'Crimson Pro',Georgia,'Times New Roman',serif;
-  --sans:'Source Sans 3',-apple-system,system-ui,sans-serif;
-  --mono:'JetBrains Mono',monospace;
+  --serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --sans:  'Source Sans 3', -apple-system, system-ui, sans-serif;
+  --mono:  'JetBrains Mono', monospace;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:var(--sans);background:var(--bg);color:var(--t1);line-height:1.7;font-weight:400;font-size:15px}
-a{color:var(--accent2);text-decoration:none;border-bottom:1px solid transparent;transition:border-color .2s}
-a:hover{border-bottom-color:var(--accent2)}
-::selection{background:var(--ai);color:var(--shironeri)}
 
-/* Container */
-.ctr{max-width:1080px;margin:0 auto;padding:0 2rem}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-/* Nav — thin, minimal */
-nav{border-bottom:1px solid var(--s3);padding:1rem 2rem;display:flex;align-items:baseline;justify-content:space-between;max-width:1080px;margin:0 auto}
-.logo{font-family:var(--serif);font-weight:600;font-size:1.15rem;cursor:pointer;letter-spacing:-.02em;color:var(--t1)}
-.logo em{font-style:italic;color:var(--accent2);font-weight:400}
-.nlinks{display:flex;gap:1.8rem;font-size:.82rem;font-weight:400}.nlinks a{color:var(--t3)}
+html { scroll-behavior: smooth; }
 
-/* Views */
-.view{display:none}.view.on{display:block}
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--t1);
+  line-height: 1.7;
+  font-weight: 400;
+  font-size: 15px;
+}
 
-/* Hero — paper title page */
-.hero{padding:4rem 0 2.5rem;text-align:center;border-bottom:1px solid var(--s3)}
-.hero h1{font-family:var(--serif);font-size:2.4rem;font-weight:300;letter-spacing:-.03em;line-height:1.2;color:var(--shironeri)}
-.hero h1 em{font-style:italic;font-weight:400;color:var(--accent2)}
-.hero .sub{color:var(--t3);margin-top:.8rem;font-size:.95rem;max-width:560px;margin-left:auto;margin-right:auto;line-height:1.6}
-.srow{display:flex;gap:3rem;margin-top:2rem;justify-content:center;flex-wrap:wrap}
-.sb{text-align:center}
-.sb .n{font-family:var(--serif);font-size:2rem;font-weight:600;color:var(--shironeri)}
-.sb .l{font-size:.65rem;color:var(--t4);text-transform:uppercase;letter-spacing:.12em;margin-top:.15rem;font-weight:500}
+a { color: var(--accent2); text-decoration: none; border-bottom: 1px solid transparent; transition: border-color .2s; }
+a:hover { border-bottom-color: var(--accent2); }
+::selection { background: var(--ai); color: var(--shironeri); }
 
-/* Toolbar */
-.bar{display:flex;gap:.8rem;flex-wrap:wrap;align-items:center;padding:1.8rem 0 1rem}
-.tabs{display:flex;gap:0}
-.tab{padding:.4rem 1rem;font-size:.8rem;font-weight:500;background:transparent;color:var(--t3);border:1px solid var(--s3);cursor:pointer;font-family:var(--sans);transition:all .15s}
-.tab:first-child{border-radius:4px 0 0 4px}.tab:last-child{border-radius:0 4px 4px 0}
-.tab:not(:first-child){border-left:0}
-.tab:hover{color:var(--t1);background:var(--s2)}
-.tab.on{background:var(--ai);color:var(--shironeri);border-color:var(--ai)}
-.si{padding:.4rem .8rem;background:var(--s1);border:1px solid var(--s3);border-radius:4px;color:var(--t1);font-size:.82rem;font-family:var(--sans);width:220px;outline:0;transition:border-color .2s}
-.si:focus{border-color:var(--accent2)}.si::placeholder{color:var(--t4)}
-.pill{padding:.25rem .6rem;font-size:.75rem;color:var(--t3);font-family:var(--mono);letter-spacing:.02em}
-select.cf{padding:.4rem .5rem;background:var(--s1);border:1px solid var(--s3);border-radius:4px;color:var(--t1);font-size:.82rem;font-family:var(--sans);outline:0}
+/* ── Layout ─────────────────────────────────────────────── */
+.ctr { max-width: 1080px; margin: 0 auto; padding: 0 2rem; }
 
-/* Table — academic paper feel */
-.tw{overflow-x:auto;padding-bottom:3rem}
-table{width:100%;border-collapse:collapse;font-size:.84rem}
-thead th{text-align:left;padding:.6rem .5rem;color:var(--t4);font-weight:500;font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;border-bottom:2px solid var(--s3);cursor:pointer;white-space:nowrap;user-select:none;font-family:var(--sans)}
-thead th:hover{color:var(--t1)}
-thead th.u::after{content:' \2191';color:var(--accent2)}
-thead th.d::after{content:' \2193';color:var(--accent2)}
-tbody tr{border-bottom:1px solid rgba(61,58,51,.4);cursor:pointer;transition:background .1s}
-tbody tr:hover{background:rgba(46,92,110,.08)}
-td{padding:.55rem .5rem;white-space:nowrap}
-.cr{font-family:var(--mono);font-weight:500;color:var(--t4);width:2rem;font-size:.8rem}
-.cn{font-family:var(--serif);font-weight:500;font-size:.9rem;max-width:300px;overflow:hidden;text-overflow:ellipsis}
-.cn .st{color:var(--kohaku);font-size:.6rem;margin-left:.3rem}
-.cc{font-size:.7rem;color:var(--t4);text-transform:uppercase;font-family:var(--mono);letter-spacing:.04em}
-.nm{font-family:var(--mono);text-align:right;color:var(--t3);font-size:.8rem}
-.sc{font-family:var(--mono);font-weight:600;text-align:right;color:var(--accent2);font-size:.82rem}
-.pc{font-family:var(--mono);text-align:right;font-size:.8rem}
-.ti{display:flex;height:4px;border-radius:2px;overflow:hidden;width:50px;gap:1px}
-.ti div{height:100%}
-.tt{background:var(--matcha)}.pd{background:var(--kohaku)}.ii{background:var(--asagi)}.oo{background:var(--nezumi)}
+/* ── Navigation ──────────────────────────────────────────── */
+.nav-wrap { border-bottom: 1px solid var(--s3); position: sticky; top: 0; z-index: 100; background: var(--bg); }
+nav {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: .9rem 2rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.logo {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 1.15rem;
+  cursor: pointer;
+  letter-spacing: -.02em;
+  color: var(--t1);
+}
+.logo em { font-style: italic; color: var(--accent2); font-weight: 400; }
+.nlinks { display: flex; gap: 1.8rem; font-size: .82rem; font-weight: 400; }
+.nlinks a { color: var(--t3); border-bottom: none; transition: color .2s; }
+.nlinks a:hover { color: var(--t1); }
 
-/* Detail view — scholarly profile */
-.dh{padding:3rem 0 1.5rem;border-bottom:1px solid var(--s3)}
-.bk{font-size:.82rem;color:var(--t3);cursor:pointer;margin-bottom:1rem;display:inline-block}.bk:hover{color:var(--accent2)}
-.dh h1{font-family:var(--serif);font-size:1.8rem;font-weight:400}
-.dm{color:var(--t3);font-size:.88rem;margin-top:.4rem}.dm span{margin-right:1.5rem}
-.dc{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:.8rem;padding:1.5rem 0}
-.dk{background:var(--s1);border:1px solid var(--s3);border-radius:6px;padding:.8rem;text-align:center}
-.dk .v{font-family:var(--serif);font-size:1.5rem;font-weight:600}
-.dk .l{font-size:.65rem;color:var(--t4);text-transform:uppercase;letter-spacing:.08em;margin-top:.15rem}
-.dg{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;padding:1.2rem 0}
-@media(max-width:768px){.dg{grid-template-columns:1fr}}
-.pn{background:var(--s1);border:1px solid var(--s3);border-radius:6px;padding:1.1rem}
-.pn h3{font-family:var(--sans);font-size:.7rem;text-transform:uppercase;color:var(--t4);letter-spacing:.08em;margin-bottom:.7rem;font-weight:500}
-.cb{height:220px;position:relative}
+/* ── Section chrome ──────────────────────────────────────── */
+.section { padding: 5rem 0; }
+.section + .section { border-top: 1px solid var(--s3); }
 
-/* Graduate list */
-.gs{padding:1.8rem 0 3rem}
-.gs h2{font-family:var(--serif);font-size:1.1rem;font-weight:500;margin-bottom:.7rem}
-.gi{padding:.4rem .8rem;background:var(--s1);border:1px solid var(--s3);border-radius:4px;color:var(--t1);font-size:.82rem;font-family:var(--sans);width:280px;outline:0;margin-bottom:.8rem}
-.gl{font-size:.82rem}
-.gr{display:grid;grid-template-columns:1fr 1fr 80px 90px;gap:.8rem;padding:.4rem 0;border-bottom:1px solid rgba(61,58,51,.25);align-items:center}
-.gr.hd{font-weight:500;color:var(--t4);font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--s3)}
-.gr .dt{color:var(--t1)}.gr .rl{color:var(--t3)}
-.gr .oc a{color:var(--t4);font-family:var(--mono);font-size:.72rem}
-.gr .cy{color:var(--t4);font-family:var(--mono);font-size:.72rem;text-transform:uppercase}
+.section-label {
+  font-family: var(--sans);
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  color: var(--t4);
+  margin-bottom: 2.5rem;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+}
+.section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--s3);
+  max-width: 80px;
+}
 
-/* Footer — colophon style */
-.ft{border-top:1px solid var(--s3);padding:2rem;color:var(--t4);font-size:.78rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;max-width:1080px;margin:0 auto}
-.ft a{color:var(--t3)}
+/* ── § 1  Hero ───────────────────────────────────────────── */
+#s-hero {
+  padding: 6rem 0 5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--s3);
+}
+#s-hero h1 {
+  font-family: var(--serif);
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -.03em;
+  line-height: 1.25;
+  color: var(--shironeri);
+}
+#s-hero h1 em {
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent2);
+}
+.hero-sub {
+  color: var(--t3);
+  margin-top: 1rem;
+  font-size: .95rem;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.65;
+}
+.hero-rule {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
+  margin: 2.2rem auto;
+  color: var(--s4);
+  font-size: .7rem;
+  letter-spacing: .04em;
+  max-width: 200px;
+}
+.hero-rule::before,
+.hero-rule::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--s4);
+}
+.hero-rule span { color: var(--t4); }
 
-/* Responsive */
-@media(max-width:768px){
-  .hero h1{font-size:1.5rem}
-  .bar{flex-direction:column;align-items:flex-start}
-  .si{width:100%}
-  .dh h1{font-size:1.3rem}
-  .srow{gap:1.5rem}
+.stat-row {
+  display: flex;
+  gap: 4rem;
+  margin-top: .5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.stat-block { text-align: center; }
+.stat-block .n {
+  font-family: var(--serif);
+  font-size: 2.1rem;
+  font-weight: 500;
+  color: var(--shironeri);
+  line-height: 1;
+}
+.stat-block .l {
+  font-size: .62rem;
+  color: var(--t4);
+  text-transform: uppercase;
+  letter-spacing: .13em;
+  margin-top: .3rem;
+  font-weight: 500;
+}
+
+/* ── § 2  Methodology ────────────────────────────────────── */
+#s-method { background: var(--s1); }
+#s-method .section-label { color: var(--t4); }
+
+.method-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2.5rem;
+}
+.method-col { }
+.method-col h3 {
+  font-family: var(--sans);
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--accent2);
+  margin-bottom: .9rem;
+}
+.method-col p {
+  font-size: .88rem;
+  color: var(--t3);
+  line-height: 1.75;
+}
+.method-col p + p { margin-top: .6rem; }
+
+.score-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-top: .9rem;
+}
+.score-pill {
+  font-family: var(--mono);
+  font-size: .72rem;
+  padding: .2rem .55rem;
+  border-radius: 3px;
+  background: var(--s2);
+  border: 1px solid var(--s3);
+  color: var(--t3);
+}
+.score-pill strong { color: var(--t1); font-weight: 500; }
+
+.src-list {
+  margin-top: .9rem;
+  display: flex;
+  flex-direction: column;
+  gap: .4rem;
+}
+.src-item {
+  font-size: .85rem;
+  color: var(--t3);
+  display: flex;
+  align-items: baseline;
+  gap: .5rem;
+}
+.src-item::before {
+  content: '—';
+  color: var(--s4);
+  font-size: .8rem;
+  flex-shrink: 0;
+}
+.src-item a { color: var(--t3); border-bottom-color: transparent; transition: color .2s; }
+.src-item a:hover { color: var(--accent2); }
+.src-count {
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--t4);
+}
+
+/* ── § 3  Rankings ───────────────────────────────────────── */
+#s-rankings { }
+
+.rank-toolbar {
+  display: flex;
+  gap: .8rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+.tabs { display: flex; gap: 0; }
+.tab {
+  padding: .4rem 1.1rem;
+  font-size: .78rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--t3);
+  border: 1px solid var(--s3);
+  cursor: pointer;
+  font-family: var(--sans);
+  transition: all .15s;
+}
+.tab:first-child { border-radius: 4px 0 0 4px; }
+.tab:last-child  { border-radius: 0 4px 4px 0; }
+.tab:not(:first-child) { border-left: 0; }
+.tab:hover { color: var(--t1); background: var(--s2); }
+.tab.on { background: var(--ai); color: var(--shironeri); border-color: var(--ai); }
+
+.si {
+  padding: .4rem .85rem;
+  background: var(--s1);
+  border: 1px solid var(--s3);
+  border-radius: 4px;
+  color: var(--t1);
+  font-size: .82rem;
+  font-family: var(--sans);
+  width: 220px;
+  outline: 0;
+  transition: border-color .2s;
+}
+.si:focus { border-color: var(--accent2); }
+.si::placeholder { color: var(--t4); }
+
+select.cf {
+  padding: .4rem .6rem;
+  background: var(--s1);
+  border: 1px solid var(--s3);
+  border-radius: 4px;
+  color: var(--t1);
+  font-size: .82rem;
+  font-family: var(--sans);
+  outline: 0;
+  cursor: pointer;
+}
+
+.pill {
+  padding: .25rem .6rem;
+  font-size: .72rem;
+  color: var(--t4);
+  font-family: var(--mono);
+  letter-spacing: .02em;
+}
+
+/* Table */
+.tw { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .84rem; }
+thead th {
+  text-align: left;
+  padding: .55rem .5rem;
+  color: var(--t4);
+  font-weight: 500;
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  border-bottom: 2px solid var(--s3);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+  font-family: var(--sans);
+}
+thead th:hover { color: var(--t1); }
+thead th.u::after { content: ' \2191'; color: var(--accent2); }
+thead th.d::after { content: ' \2193'; color: var(--accent2); }
+tbody tr {
+  border-bottom: 1px solid rgba(61,58,51,.35);
+  cursor: pointer;
+  transition: background .12s;
+}
+tbody tr:hover { background: rgba(46,92,110,.09); }
+tbody tr.expanded { background: rgba(46,92,110,.06); border-bottom: none; }
+td { padding: .55rem .5rem; white-space: nowrap; }
+
+.cr {
+  font-family: var(--mono);
+  font-weight: 500;
+  color: var(--t4);
+  width: 2rem;
+  font-size: .78rem;
+}
+.cn {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: .9rem;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cn .st { color: var(--kohaku); font-size: .6rem; margin-left: .3rem; }
+.cc {
+  font-size: .68rem;
+  color: var(--t4);
+  text-transform: uppercase;
+  font-family: var(--mono);
+  letter-spacing: .04em;
+}
+.nm { font-family: var(--mono); text-align: right; color: var(--t3); font-size: .8rem; }
+.sc { font-family: var(--mono); font-weight: 600; text-align: right; color: var(--accent2); font-size: .82rem; }
+.pc { font-family: var(--mono); text-align: right; font-size: .8rem; }
+.ti { display: flex; height: 4px; border-radius: 2px; overflow: hidden; width: 50px; gap: 1px; }
+.ti div { height: 100%; }
+.tt  { background: var(--matcha); }
+.pd  { background: var(--kohaku); }
+.ii  { background: var(--asagi); }
+.oo  { background: var(--nezumi); }
+
+/* Show-more button */
+.show-more-wrap {
+  text-align: center;
+  padding: 1.8rem 0 .5rem;
+  border-top: 1px solid var(--s3);
+}
+.show-more-btn {
+  background: transparent;
+  border: 1px solid var(--s3);
+  color: var(--t3);
+  font-family: var(--sans);
+  font-size: .82rem;
+  padding: .5rem 1.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.show-more-btn:hover { border-color: var(--accent2); color: var(--t1); }
+
+/* ── Inline detail panel ─────────────────────────────────── */
+.detail-row { display: none; }
+.detail-row.open { display: table-row; }
+.detail-row td {
+  padding: 0;
+  white-space: normal;
+  background: var(--s1);
+  border-bottom: 2px solid var(--s3);
+}
+.detail-panel {
+  padding: 2rem;
+  animation: panelIn .22s ease;
+}
+@keyframes panelIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.detail-panel-close {
+  font-size: .78rem;
+  color: var(--t4);
+  cursor: pointer;
+  float: right;
+  font-family: var(--sans);
+  transition: color .15s;
+}
+.detail-panel-close:hover { color: var(--t1); }
+.detail-panel h2 {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--shironeri);
+  margin-bottom: .3rem;
+}
+.detail-panel .dm {
+  color: var(--t3);
+  font-size: .85rem;
+  margin-bottom: 1.2rem;
+}
+.detail-panel .dm span { margin-right: 1.5rem; }
+.dc {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: .7rem;
+  margin-bottom: 1.5rem;
+}
+.dk {
+  background: var(--s2);
+  border: 1px solid var(--s3);
+  border-radius: 5px;
+  padding: .75rem;
+  text-align: center;
+}
+.dk .v {
+  font-family: var(--serif);
+  font-size: 1.4rem;
+  font-weight: 600;
+  line-height: 1;
+}
+.dk .l {
+  font-size: .6rem;
+  color: var(--t4);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  margin-top: .25rem;
+}
+.dg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.pn {
+  background: var(--s2);
+  border: 1px solid var(--s3);
+  border-radius: 5px;
+  padding: 1rem;
+}
+.pn h3 {
+  font-family: var(--sans);
+  font-size: .66rem;
+  text-transform: uppercase;
+  color: var(--t4);
+  letter-spacing: .09em;
+  margin-bottom: .65rem;
+  font-weight: 500;
+}
+.cb { height: 210px; position: relative; }
+
+/* Graduate list inside panel */
+.gs { padding-top: 1rem; }
+.gs h2 {
+  font-family: var(--serif);
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: .6rem;
+  color: var(--t1);
+}
+.gi {
+  padding: .4rem .8rem;
+  background: var(--s3);
+  border: 1px solid var(--s4);
+  border-radius: 4px;
+  color: var(--t1);
+  font-size: .82rem;
+  font-family: var(--sans);
+  width: 280px;
+  outline: 0;
+  margin-bottom: .8rem;
+}
+.gi::placeholder { color: var(--t4); }
+.gi:focus { border-color: var(--accent2); }
+.gl { font-size: .82rem; }
+.gr {
+  display: grid;
+  grid-template-columns: 1fr 1fr 80px 90px;
+  gap: .8rem;
+  padding: .38rem 0;
+  border-bottom: 1px solid rgba(61,58,51,.22);
+  align-items: center;
+}
+.gr.hd {
+  font-weight: 500;
+  color: var(--t4);
+  font-size: .66rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  border-bottom: 1px solid var(--s3);
+}
+.gr .dt { color: var(--t1); }
+.gr .rl { color: var(--t3); }
+.gr .oc a { color: var(--t4); font-family: var(--mono); font-size: .72rem; }
+.gr .cy { color: var(--t4); font-family: var(--mono); font-size: .72rem; text-transform: uppercase; }
+
+/* ── § 4  Coverage ───────────────────────────────────────── */
+#s-coverage { background: var(--s1); }
+
+.coverage-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+}
+.coverage-table-wrap { overflow-x: auto; }
+.cov-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .83rem;
+}
+.cov-table thead th {
+  font-size: .63rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--t4);
+  padding: .45rem .5rem;
+  border-bottom: 1px solid var(--s3);
+  text-align: left;
+  cursor: default;
+}
+.cov-table thead th::after { content: none; }
+.cov-table tbody td {
+  padding: .45rem .5rem;
+  border-bottom: 1px solid rgba(61,58,51,.25);
+  color: var(--t3);
+  font-size: .83rem;
+  cursor: default;
+}
+.cov-table tbody td:first-child {
+  font-family: var(--serif);
+  font-size: .9rem;
+  color: var(--t1);
+  font-weight: 500;
+}
+.cov-table tbody td.mono { font-family: var(--mono); font-size: .78rem; }
+.cov-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: .7rem;
+  padding: .1rem .45rem;
+  border-radius: 3px;
+  background: rgba(107,147,98,.15);
+  color: var(--matcha);
+  border: 1px solid rgba(107,147,98,.25);
+}
+
+.coverage-aside { }
+.coverage-aside h3 {
+  font-family: var(--sans);
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  color: var(--accent2);
+  margin-bottom: .9rem;
+}
+.coverage-aside p {
+  font-size: .88rem;
+  color: var(--t3);
+  line-height: 1.75;
+  margin-bottom: .8rem;
+}
+.zero-unknown {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  margin: 1.2rem 0;
+  padding: .8rem 1rem;
+  background: rgba(107,147,98,.07);
+  border: 1px solid rgba(107,147,98,.18);
+  border-radius: 4px;
+}
+.zero-unknown .check {
+  font-family: var(--mono);
+  font-size: .72rem;
+  color: var(--matcha);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.zero-unknown p {
+  font-size: .82rem;
+  color: var(--t3);
+  margin: 0;
+}
+
+/* ── § 5  Footer ─────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--s3);
+  padding: 2.8rem 0;
+  color: var(--t4);
+  font-size: .78rem;
+}
+.footer-inner {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 2rem;
+  align-items: start;
+}
+.footer-left { }
+.footer-title {
+  font-family: var(--serif);
+  font-size: .95rem;
+  font-weight: 500;
+  color: var(--t3);
+  margin-bottom: .5rem;
+}
+.footer-meta { color: var(--t4); line-height: 1.9; }
+.footer-meta a { color: var(--t4); border-bottom: 1px solid transparent; transition: color .2s, border-color .2s; }
+.footer-meta a:hover { color: var(--accent2); border-bottom-color: var(--accent2); }
+.footer-cite {
+  margin-top: .9rem;
+  padding: .7rem .9rem;
+  background: var(--s1);
+  border-left: 2px solid var(--s3);
+  font-size: .75rem;
+  color: var(--t4);
+  line-height: 1.7;
+  font-family: var(--mono);
+  max-width: 560px;
+}
+.footer-right {
+  text-align: right;
+}
+.footer-version {
+  font-family: var(--mono);
+  font-size: .7rem;
+  color: var(--t4);
+  margin-bottom: .4rem;
+}
+.footer-right a { color: var(--t3); font-size: .8rem; }
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .method-grid { grid-template-columns: 1fr; gap: 2rem; }
+  .coverage-grid { grid-template-columns: 1fr; gap: 2.5rem; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .footer-right { text-align: left; }
+  .dg { grid-template-columns: 1fr; }
+  .gr { grid-template-columns: 1fr 1fr 60px; }
+  .gr .oc { display: none; }
+}
+@media (max-width: 640px) {
+  #s-hero h1 { font-size: 1.6rem; }
+  .stat-row { gap: 2rem; }
+  .rank-toolbar { flex-direction: column; align-items: flex-start; }
+  .si { width: 100%; }
+  .dc { grid-template-columns: repeat(3, 1fr); }
 }
 </style>
 </head>
 <body>
-<nav><div class="logo" onclick="go('r')">PhD<em>Rank</em></div><div class="nlinks"><a href="#" onclick="go('r');return false">Rankings</a><a href="https://github.com/soray42/PhDRank">GitHub</a><a href="https://doi.org/10.5281/zenodo.17983291">Data</a></div></nav>
 
-<div class="view on" id="vr"><div class="ctr">
-  <div class="hero">
+<!-- ── Navigation ──────────────────────────────────────────── -->
+<div class="nav-wrap">
+  <nav>
+    <div class="logo" onclick="navToRankings()">PhD<em>Rank</em></div>
+    <div class="nlinks">
+      <a href="#s-rankings" onclick="navToRankings()">Rankings</a>
+      <a href="#s-method">Methodology</a>
+      <a href="https://github.com/soray42/PhDRank" target="_blank">GitHub</a>
+      <a href="https://doi.org/10.5281/zenodo.17983291" target="_blank">Data</a>
+    </div>
+  </nav>
+</div>
+
+<!-- ── § 1  Hero ───────────────────────────────────────────── -->
+<section id="s-hero">
+  <div class="ctr">
     <h1>Where do PhD graduates <em>actually</em> end up?</h1>
-    <p class="sub">Placement rankings built on verified outcomes from ORCID, CSRankings &amp; econphdplacements.com &mdash; not surveys, not reputation.</p>
-    <div class="srow">
-      <div class="sb"><div class="n">28,740</div><div class="l">Graduates</div></div>
-      <div class="sb"><div class="n">755</div><div class="l">Programs</div></div>
-      <div class="sb"><div class="n">3</div><div class="l">Fields</div></div>
-      <div class="sb"><div class="n">51</div><div class="l">Countries</div></div>
+    <p class="hero-sub">Placement rankings built on verified career outcomes — not surveys, not reputation, not prestige proxies.</p>
+    <div class="hero-rule"><span>&#9670;</span></div>
+    <div class="stat-row">
+      <div class="stat-block"><div class="n">28,740</div><div class="l">Graduates</div></div>
+      <div class="stat-block"><div class="n">755</div><div class="l">Programs</div></div>
+      <div class="stat-block"><div class="n">3</div><div class="l">Fields</div></div>
+      <div class="stat-block"><div class="n">51</div><div class="l">Countries</div></div>
     </div>
   </div>
-  <div class="bar"><div class="tabs" id="tabs"></div><input class="si" placeholder="Search programs..." id="q" oninput="tbl()"><select class="cf" id="cf" onchange="tbl()"><option value="">All countries</option></select><div class="pill" id="cp"></div></div>
-  <div class="tw"><table><thead><tr><th class="u" data-k="r" data-t="n">#</th><th data-k="s" data-t="s">Program</th><th data-k="c" data-t="s">Ctry</th><th data-k="n" data-t="n">N</th><th data-k="sc" data-t="n">Score</th><th data-k="D" data-t="n">Dest</th><th data-k="T" data-t="n">Tier</th><th data-k="I" data-t="n">Qual</th><th data-k="tt" data-t="n">TT%</th><th>Mix</th></tr></thead><tbody id="tb"></tbody></table></div>
-</div></div>
+</section>
 
-<div class="view" id="vd"><div class="ctr">
-  <div class="dh"><div class="bk" onclick="go('r')">&larr; Back to rankings</div><h1 id="dn"></h1><div class="dm" id="dmt"></div></div>
-  <div class="dc" id="dca"></div>
-  <div class="dg"><div class="pn"><h3>Career Outcomes</h3><div class="cb"><canvas id="c1"></canvas></div></div><div class="pn"><h3>Top Destinations</h3><div class="cb"><canvas id="c2"></canvas></div></div></div>
-  <div class="dg"><div class="pn"><h3>Sub-score Profile</h3><div class="cb"><canvas id="c3"></canvas></div></div><div class="pn"><h3>vs Field Average</h3><div id="cmp"></div></div></div>
-  <div class="gs"><h2 id="gt">PhD Graduates</h2><input class="gi" placeholder="Search by destination or role..." id="gq" oninput="grd()"><div class="gl" id="gl"></div></div>
-</div></div>
+<!-- ── § 2  Methodology ────────────────────────────────────── -->
+<section id="s-method" class="section">
+  <div class="ctr">
+    <div class="section-label">Methodology</div>
+    <div class="method-grid">
 
-<div class="ft"><div><strong>PhDRank v1.3</strong> &middot; ORCID (CC-BY 4.0) + CSRankings + econphdplacements.com &middot; D(40%)+T(35%)+R(10%)+I(15%)+V(5%) &middot; 2026</div><div>Built by <a href="https://soray42.github.io">Sora</a></div></div>
+      <div class="method-col">
+        <h3>What we measure</h3>
+        <p>PhDRank ranks doctoral programs by where their graduates land — faculty positions, postdocs, industry roles — not by reputation scores or peer surveys.</p>
+        <p>Every placement is traced to a verified, public career record. If a destination cannot be confirmed, it is excluded from scoring.</p>
+      </div>
+
+      <div class="method-col">
+        <h3>How we score</h3>
+        <p>Each program receives a composite score from four components, weighted to reflect what the academic job market actually rewards.</p>
+        <div class="score-pills">
+          <span class="score-pill"><strong>D&thinsp;40%</strong> destination quality</span>
+          <span class="score-pill"><strong>T&thinsp;35%</strong> career tier</span>
+          <span class="score-pill"><strong>I&thinsp;15%</strong> international reach</span>
+          <span class="score-pill"><strong>R&thinsp;10%</strong> cited-by rate</span>
+          <span class="score-pill"><strong>V&thinsp;5%</strong> variance bonus</span>
+        </div>
+        <p style="margin-top:.75rem">Scores are normalized within each field over a rolling 10-year window.</p>
+      </div>
+
+      <div class="method-col">
+        <h3>Data sources</h3>
+        <p>Three complementary sources are cross-referenced to achieve full coverage within each field.</p>
+        <div class="src-list">
+          <span class="src-item"><a href="https://orcid.org" target="_blank">ORCID</a> <span class="src-count">— employment histories (CC-BY 4.0)</span></span>
+          <span class="src-item"><a href="https://csrankings.org" target="_blank">CSRankings</a> <span class="src-count">— Computer Science faculty</span></span>
+          <span class="src-item"><a href="https://econphdplacements.com" target="_blank">econphdplacements.com</a> <span class="src-count">— Economics placements</span></span>
+        </div>
+        <p style="margin-top:.75rem">NULL destinations are imputed at the 25th percentile — no program is penalized for incomplete records.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── § 3  Rankings ───────────────────────────────────────── -->
+<section id="s-rankings" class="section">
+  <div class="ctr">
+    <div class="section-label">Rankings</div>
+    <div class="rank-toolbar">
+      <div class="tabs" id="tabs"></div>
+      <input class="si" placeholder="Search programs&#8230;" id="q" oninput="tbl()">
+      <select class="cf" id="cf" onchange="tbl()"><option value="">All countries</option></select>
+      <div class="pill" id="cp"></div>
+    </div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th class="u" data-k="r" data-t="n">#</th>
+            <th data-k="s" data-t="s">Program</th>
+            <th data-k="c" data-t="s">Ctry</th>
+            <th data-k="n" data-t="n">N</th>
+            <th data-k="sc" data-t="n">Score</th>
+            <th data-k="D" data-t="n">Dest</th>
+            <th data-k="T" data-t="n">Tier</th>
+            <th data-k="I" data-t="n">Qual</th>
+            <th data-k="tt" data-t="n">TT%</th>
+            <th>Mix</th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+    <div class="show-more-wrap" id="show-more-wrap" style="display:none">
+      <button class="show-more-btn" id="show-more-btn" onclick="showMore()">Show all <span id="show-more-count"></span> programs ↓</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── § 4  Coverage ───────────────────────────────────────── -->
+<section id="s-coverage" class="section">
+  <div class="ctr">
+    <div class="section-label">Data &amp; Coverage</div>
+    <div class="coverage-grid">
+
+      <div class="coverage-table-wrap">
+        <table class="cov-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Programs</th>
+              <th>Graduates</th>
+              <th>Avg N</th>
+              <th>Coverage</th>
+            </tr>
+          </thead>
+          <tbody id="cov-tbody">
+            <tr>
+              <td>Computer Science</td>
+              <td class="mono">291</td>
+              <td class="mono">11,420</td>
+              <td class="mono">39.2</td>
+              <td><span class="cov-badge">100%</span></td>
+            </tr>
+            <tr>
+              <td>Economics</td>
+              <td class="mono">297</td>
+              <td class="mono">13,184</td>
+              <td class="mono">44.4</td>
+              <td><span class="cov-badge">100%</span></td>
+            </tr>
+            <tr>
+              <td>Mathematics</td>
+              <td class="mono">167</td>
+              <td class="mono">4,136</td>
+              <td class="mono">24.8</td>
+              <td><span class="cov-badge">100%</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="coverage-aside">
+        <h3>Transparency</h3>
+        <div class="zero-unknown">
+          <span class="check">0% unknown</span>
+          <p>Every graduate's destination is scored. No program benefits from missing data.</p>
+        </div>
+        <p>Programs with fewer than 5 placed graduates are excluded. Scores reflect only the most recent 10-year cohort window to account for field evolution.</p>
+        <p>Full methodology, raw data, and replication scripts are published on <a href="https://github.com/soray42/PhDRank" target="_blank">GitHub</a>. The dataset is archived on <a href="https://doi.org/10.5281/zenodo.17983291" target="_blank">Zenodo</a> under CC-BY 4.0.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── Footer ─────────────────────────────────────────────── -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-left">
+      <div class="footer-title">PhDRank — Global PhD Placement Rankings</div>
+      <div class="footer-meta">
+        Data: ORCID (CC-BY 4.0) &middot; CSRankings &middot; econphdplacements.com<br>
+        Score: D(40%) + T(35%) + I(15%) + R(10%) + V(5%) &middot; 10-year rolling window<br>
+        Built by <a href="https://soray42.github.io" target="_blank">Sora</a> &middot; 2026 &middot; <a href="https://github.com/soray42/PhDRank/blob/main/LICENSE" target="_blank">CC-BY 4.0</a>
+      </div>
+      <div class="footer-cite">
+        Sora (2026). PhDRank: Global PhD Placement Rankings (v1.3).<br>
+        Zenodo. https://doi.org/10.5281/zenodo.17983291
+      </div>
+    </div>
+    <div class="footer-right">
+      <div class="footer-version">v1.3</div>
+      <a href="https://github.com/soray42/PhDRank" target="_blank">GitHub</a>
+    </div>
+  </div>
+</footer>
 
 <script>
-let D={},G={},F='cs',SK='r',SA=true,CR=null,CH={};
-const FN={cs:'Computer Science',econ:'Economics',math:'Mathematics'};
-const CC={grn:'#6b9362',amb:'#ca8269',blu:'#48929b',gry:'#656461',bg1:'#24231f',bg2:'#2d2b26',ln:'#3d3a33',t1:'#f7f0e3',t3:'#9e9b95',t4:'#7d7b77'};
+/* ── State ───────────────────────────────────────────────── */
+let D = {}, G = {}, F = 'cs', SK = 'r', SA = true, CR = null, CH = {};
+let showAll = false;
+const SHOW_LIMIT = 50;
+const FN = { cs: 'Computer Science', econ: 'Economics', math: 'Mathematics' };
+const CC = {
+  grn: '#6b9362', amb: '#ca8269', blu: '#48929b', gry: '#656461',
+  bg1: '#24231f', bg2: '#2d2b26', ln: '#3d3a33',
+  t1: '#f7f0e3', t3: '#9e9b95', t4: '#7d7b77'
+};
 
-async function init(){D=await(await fetch('data.json')).json();try{G=await(await fetch('graduates.json')).json()}catch(e){G={}}
-const t=document.getElementById('tabs');Object.entries(FN).forEach(([k,v])=>{const b=document.createElement('button');b.className='tab'+(k===F?' on':'');b.textContent=v;b.onclick=()=>{F=k;t.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');pop();tbl()};t.appendChild(b)});pop();tbl()}
+/* ── Init ────────────────────────────────────────────────── */
+async function init() {
+  D = await (await fetch('data.json')).json();
+  try { G = await (await fetch('graduates.json')).json(); } catch(e) { G = {}; }
 
-function pop(){const s=document.getElementById('cf'),cs=[...new Set((D[F]||[]).map(r=>r.c))].filter(Boolean).sort();s.innerHTML='<option value="">All countries</option>'+cs.map(c=>'<option value="'+c+'">'+c.toUpperCase()+'</option>').join('')}
+  const t = document.getElementById('tabs');
+  Object.entries(FN).forEach(([k, v]) => {
+    const b = document.createElement('button');
+    b.className = 'tab' + (k === F ? ' on' : '');
+    b.textContent = v;
+    b.onclick = () => {
+      F = k;
+      showAll = false;
+      t.querySelectorAll('.tab').forEach(x => x.classList.remove('on'));
+      b.classList.add('on');
+      pop(); tbl();
+    };
+    t.appendChild(b);
+  });
+  pop(); tbl();
+}
 
-function tbl(){const q=document.getElementById('q').value.toLowerCase(),cc=document.getElementById('cf').value;let rows=D[F]||[];if(q)rows=rows.filter(r=>r.s.includes(q)||(r.c||'').includes(q));if(cc)rows=rows.filter(r=>r.c===cc);rows=[...rows].sort((a,b)=>{let x=a[SK],y=b[SK];if(typeof x==='string'){x=x.toLowerCase();y=(y||'').toLowerCase()}return x<y?(SA?-1:1):x>y?(SA?1:-1):0});document.getElementById('cp').textContent=rows.length+' programs';const tb=document.getElementById('tb');tb.innerHTML='';rows.forEach(r=>{const tr=document.createElement('tr');const nm=r.s.replace(/\b\w/g,l=>l.toUpperCase());const ot=Math.max(0,100-(r.tt||0)-(r.pd||0)-(r.ind||0));tr.innerHTML='<td class="cr">'+r.r+'</td><td class="cn" title="'+r.s+'">'+nm+(r.pr?'<span class="st">\u2605</span>':'')+'</td><td class="cc">'+(r.c||'').toUpperCase()+'</td><td class="nm">'+r.n+'</td><td class="sc">'+r.sc.toFixed(1)+'</td><td class="nm">'+r.D.toFixed(3)+'</td><td class="nm">'+r.T.toFixed(3)+'</td><td class="nm">'+r.I.toFixed(3)+'</td><td class="pc" style="color:'+CC.grn+'">'+(r.tt||0).toFixed(0)+'%</td><td><div class="ti"><div class="tt" style="width:'+(r.tt||0)+'%"></div><div class="pd" style="width:'+(r.pd||0)+'%"></div><div class="ii" style="width:'+(r.ind||0)+'%"></div><div class="oo" style="width:'+ot+'%"></div></div></td>';tr.onclick=()=>det(r);tb.appendChild(tr)})}
+/* ── Country filter populate ─────────────────────────────── */
+function pop() {
+  const s = document.getElementById('cf');
+  const cs = [...new Set((D[F] || []).map(r => r.c))].filter(Boolean).sort();
+  s.innerHTML = '<option value="">All countries</option>' +
+    cs.map(c => '<option value="' + c + '">' + c.toUpperCase() + '</option>').join('');
+}
 
-document.querySelectorAll('thead th[data-k]').forEach(th=>{th.onclick=()=>{const k=th.dataset.k;if(SK===k)SA=!SA;else{SK=k;SA=th.dataset.t==='n'}document.querySelectorAll('thead th').forEach(t=>t.classList.remove('u','d'));th.classList.add(SA?'u':'d');tbl()}});
+/* ── Table render ────────────────────────────────────────── */
+function tbl() {
+  // Close any open detail panel when re-rendering
+  closeDetailPanel();
 
-function det(r){CR=r;go('d');window.scrollTo(0,0);const nm=r.s.replace(/\b\w/g,l=>l.toUpperCase());document.getElementById('dn').textContent=nm;document.getElementById('dmt').innerHTML='<span>\uD83D\uDCCD '+(r.c||'').toUpperCase()+'</span><span>\uD83C\uDF93 '+r.n+' graduates</span><span>\uD83D\uDCCA #'+r.r+' in '+FN[F]+'</span>'+(r.pr?'<span>\u2605 Prestigious</span>':'');const ot=Math.max(0,100-(r.tt||0)-(r.pd||0)-(r.ind||0));document.getElementById('dca').innerHTML='<div class="dk"><div class="v" style="color:'+CC.blu+'">'+r.sc.toFixed(1)+'</div><div class="l">Score</div></div><div class="dk"><div class="v" style="color:'+CC.grn+'">'+(r.tt||0).toFixed(0)+'%</div><div class="l">Faculty</div></div><div class="dk"><div class="v" style="color:'+CC.amb+'">'+(r.pd||0).toFixed(0)+'%</div><div class="l">Postdoc</div></div><div class="dk"><div class="v" style="color:'+CC.blu+'">'+(r.ind||0).toFixed(0)+'%</div><div class="l">Industry</div></div><div class="dk"><div class="v">'+ot.toFixed(0)+'%</div><div class="l">Other</div></div><div class="dk"><div class="v">'+(r.pi||0).toFixed(0)+'%</div><div class="l">Intl Rate</div></div>';
-Object.values(CH).forEach(c=>{if(c)c.destroy()});
-CH.t=new Chart(document.getElementById('c1'),{type:'doughnut',data:{labels:['Faculty','Postdoc','Industry','Other'],datasets:[{data:[r.tt||0,r.pd||0,r.ind||0,ot],backgroundColor:[CC.grn,CC.amb,CC.blu,CC.gry],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{color:CC.t3,font:{family:'Source Sans 3',size:11}}}}}});
-const ds=(r.td||[]).slice(0,8);CH.d=new Chart(document.getElementById('c2'),{type:'bar',data:{labels:ds.map(d=>d.o.replace(/\b\w/g,l=>l.toUpperCase()).substring(0,28)),datasets:[{data:ds.map(d=>d.n),backgroundColor:CC.blu,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{grid:{color:CC.ln},ticks:{color:CC.t4,font:{family:'Source Sans 3'}}},y:{grid:{display:false},ticks:{color:CC.t3,font:{family:'Source Sans 3',size:10}}}},plugins:{legend:{display:false}}}});
-const all=D[F]||[],avg={D:0,T:0,R:0,I:0};let c=0;all.forEach(x=>{avg.D+=x.D;avg.T+=x.T;avg.R+=(x.R||1);avg.I+=x.I;c++});if(c){avg.D/=c;avg.T/=c;avg.R/=c;avg.I/=c}
-CH.r=new Chart(document.getElementById('c3'),{type:'radar',data:{labels:['Destination','Career Tier','Return','Quality'],datasets:[{label:nm.substring(0,20),data:[r.D,r.T,r.R||1,r.I],borderColor:CC.blu,backgroundColor:'rgba(72,146,155,.1)',pointBackgroundColor:CC.blu},{label:'Field Avg',data:[avg.D,avg.T,avg.R,avg.I],borderColor:CC.gry,backgroundColor:'rgba(101,100,97,.06)',pointBackgroundColor:CC.gry,borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{grid:{color:CC.ln},ticks:{display:false},pointLabels:{color:CC.t3,font:{family:'Source Sans 3',size:11}}}},plugins:{legend:{position:'bottom',labels:{color:CC.t3,font:{family:'Source Sans 3',size:11}}}}}});
-const p=k=>{const v=all.map(x=>x[k]||0).sort((a,b)=>a-b);const i=v.findIndex(x=>x>=r[k]);return Math.round(i/v.length*100)};document.getElementById('cmp').innerHTML='<div style="font-size:.88rem;line-height:2.4;font-family:var(--serif)"><p><strong>Destination:</strong> '+r.D.toFixed(3)+' <span style="color:var(--t4)">('+p('D')+'th pctile)</span></p><p><strong>Career tier:</strong> '+r.T.toFixed(3)+' <span style="color:var(--t4)">('+p('T')+'th pctile)</span></p><p><strong>Quality:</strong> '+r.I.toFixed(3)+' <span style="color:var(--t4)">('+p('I')+'th pctile)</span></p><p style="margin-top:.8rem;color:var(--t4);font-size:.78rem;font-family:var(--sans)">Within '+FN[F]+' ('+all.length+' programs).</p></div>';
-document.getElementById('gt').textContent='PhD Graduates \u2014 '+nm;grd()}
+  const q  = document.getElementById('q').value.toLowerCase();
+  const cc = document.getElementById('cf').value;
+  let rows = D[F] || [];
+  if (q)  rows = rows.filter(r => r.s.includes(q) || (r.c || '').includes(q));
+  if (cc) rows = rows.filter(r => r.c === cc);
+  rows = [...rows].sort((a, b) => {
+    let x = a[SK], y = b[SK];
+    if (typeof x === 'string') { x = x.toLowerCase(); y = (y || '').toLowerCase(); }
+    return x < y ? (SA ? -1 : 1) : x > y ? (SA ? 1 : -1) : 0;
+  });
 
-function grd(){if(!CR)return;const key=F+'_'+CR.s,gs=G[key]||[];const gq=(document.getElementById('gq').value||'').toLowerCase();const gl=document.getElementById('gl');if(!gs.length){gl.innerHTML='<div style="color:var(--t4);padding:1rem 0;font-size:.85rem">Graduate-level data available for ranked programs. Each row links to the graduate\'s <a href="https://orcid.org" target="_blank">ORCID</a> profile.</div>';return}let f=gs;if(gq)f=gs.filter(g=>(g.d||'').toLowerCase().includes(gq)||(g.r||'').toLowerCase().includes(gq));let h='<div class="gr hd"><div>Destination</div><div>Role</div><div>Country</div><div>ORCID</div></div>';f.slice(0,300).forEach(g=>{const dn=(g.d||'\u2014').replace(/\b\w/g,l=>l.toUpperCase());h+='<div class="gr"><div class="dt">'+dn+'</div><div class="rl">'+(g.r||'\u2014')+'</div><div class="cy">'+(g.c||'').toUpperCase()+'</div><div class="oc">'+(g.o?'<a href="https://orcid.org/'+g.o+'" target="_blank">'+g.o.slice(-9)+'</a>':'\u2014')+'</div></div>'});if(f.length>300)h+='<div style="padding:.5rem 0;color:var(--t4);font-size:.78rem">Showing 300 of '+f.length+'</div>';gl.innerHTML=h}
+  document.getElementById('cp').textContent = rows.length + ' programs';
 
-function go(v){document.querySelectorAll('.view').forEach(x=>x.classList.remove('on'));document.getElementById(v==='r'?'vr':'vd').classList.add('on')}
+  const tb = document.getElementById('tb');
+  tb.innerHTML = '';
+
+  const displayRows = showAll ? rows : rows.slice(0, SHOW_LIMIT);
+  displayRows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.dataset.key = F + '_' + r.s;
+    const nm = r.s.replace(/\b\w/g, l => l.toUpperCase());
+    const ot = Math.max(0, 100 - (r.tt || 0) - (r.pd || 0) - (r.ind || 0));
+    tr.innerHTML =
+      '<td class="cr">' + r.r + '</td>' +
+      '<td class="cn" title="' + r.s + '">' + nm + (r.pr ? '<span class="st">\u2605</span>' : '') + '</td>' +
+      '<td class="cc">' + (r.c || '').toUpperCase() + '</td>' +
+      '<td class="nm">' + r.n + '</td>' +
+      '<td class="sc">' + r.sc.toFixed(1) + '</td>' +
+      '<td class="nm">' + r.D.toFixed(3) + '</td>' +
+      '<td class="nm">' + r.T.toFixed(3) + '</td>' +
+      '<td class="nm">' + r.I.toFixed(3) + '</td>' +
+      '<td class="pc" style="color:' + CC.grn + '">' + (r.tt || 0).toFixed(0) + '%</td>' +
+      '<td><div class="ti">' +
+        '<div class="tt" style="width:' + (r.tt  || 0) + '%"></div>' +
+        '<div class="pd" style="width:' + (r.pd  || 0) + '%"></div>' +
+        '<div class="ii" style="width:' + (r.ind || 0) + '%"></div>' +
+        '<div class="oo" style="width:' + ot + '%"></div>' +
+      '</div></td>';
+
+    // Detail row (inserted right after this row)
+    const dtr = document.createElement('tr');
+    dtr.className = 'detail-row';
+    dtr.id = 'dr_' + safeId(F + '_' + r.s);
+    const dtd = document.createElement('td');
+    dtd.colSpan = 10;
+    dtr.appendChild(dtd);
+
+    tr.onclick = () => toggleDetail(tr, dtr, r);
+    tb.appendChild(tr);
+    tb.appendChild(dtr);
+  });
+
+  // Show-more button
+  const smw = document.getElementById('show-more-wrap');
+  const smb = document.getElementById('show-more-btn');
+  const smc = document.getElementById('show-more-count');
+  if (!showAll && rows.length > SHOW_LIMIT) {
+    smw.style.display = '';
+    smc.textContent = rows.length;
+  } else {
+    smw.style.display = 'none';
+  }
+}
+
+function showMore() {
+  showAll = true;
+  tbl();
+}
+
+function safeId(str) {
+  return str.replace(/[^a-z0-9]/gi, '_');
+}
+
+/* ── Detail panel toggle ─────────────────────────────────── */
+let openDetailRow = null;
+
+function closeDetailPanel() {
+  if (openDetailRow) {
+    openDetailRow.classList.remove('open');
+    openDetailRow.querySelector('td').innerHTML = '';
+    const prev = openDetailRow.previousElementSibling;
+    if (prev) prev.classList.remove('expanded');
+    openDetailRow = null;
+    CR = null;
+    Object.values(CH).forEach(c => { if (c) c.destroy(); });
+    CH = {};
+  }
+}
+
+function toggleDetail(tr, dtr, r) {
+  // If clicking the same row, close it
+  if (openDetailRow === dtr) {
+    closeDetailPanel();
+    return;
+  }
+  // Close any open panel first
+  closeDetailPanel();
+
+  CR = r;
+  openDetailRow = dtr;
+  tr.classList.add('expanded');
+  dtr.classList.add('open');
+
+  const nm = r.s.replace(/\b\w/g, l => l.toUpperCase());
+  const ot = Math.max(0, 100 - (r.tt || 0) - (r.pd || 0) - (r.ind || 0));
+
+  // Build unique canvas IDs per program to avoid Chart.js conflicts
+  const uid = safeId(F + '_' + r.s);
+  const c1id = 'c1_' + uid;
+  const c2id = 'c2_' + uid;
+  const c3id = 'c3_' + uid;
+
+  const panelId = 'panel_' + uid;
+  const gqId   = 'gq_' + uid;
+  const glId   = 'gl_' + uid;
+  const gtId   = 'gt_' + uid;
+
+  dtr.querySelector('td').innerHTML =
+    '<div class="detail-panel" id="' + panelId + '">' +
+      '<span class="detail-panel-close" onclick="closeDetailPanel()">&times; close</span>' +
+      '<h2>' + nm + '</h2>' +
+      '<div class="dm" id="dm_' + uid + '">' +
+        '<span>' + (r.c || '').toUpperCase() + '</span>' +
+        '<span>' + r.n + ' graduates</span>' +
+        '<span>#' + r.r + ' in ' + FN[F] + '</span>' +
+        (r.pr ? '<span>\u2605 Prestigious</span>' : '') +
+      '</div>' +
+      '<div class="dc">' +
+        '<div class="dk"><div class="v" style="color:' + CC.blu + '">'  + r.sc.toFixed(1)        + '</div><div class="l">Score</div></div>' +
+        '<div class="dk"><div class="v" style="color:' + CC.grn + '">'  + (r.tt  || 0).toFixed(0) + '%</div><div class="l">Faculty</div></div>' +
+        '<div class="dk"><div class="v" style="color:' + CC.amb + '">'  + (r.pd  || 0).toFixed(0) + '%</div><div class="l">Postdoc</div></div>' +
+        '<div class="dk"><div class="v" style="color:' + CC.blu + '">'  + (r.ind || 0).toFixed(0) + '%</div><div class="l">Industry</div></div>' +
+        '<div class="dk"><div class="v">'                                + ot.toFixed(0)            + '%</div><div class="l">Other</div></div>' +
+        '<div class="dk"><div class="v">'                                + (r.pi || 0).toFixed(0)  + '%</div><div class="l">Intl Rate</div></div>' +
+      '</div>' +
+      '<div class="dg">' +
+        '<div class="pn"><h3>Career Outcomes</h3><div class="cb"><canvas id="' + c1id + '"></canvas></div></div>' +
+        '<div class="pn"><h3>Top Destinations</h3><div class="cb"><canvas id="' + c2id + '"></canvas></div></div>' +
+      '</div>' +
+      '<div class="dg">' +
+        '<div class="pn"><h3>Sub-score Profile</h3><div class="cb"><canvas id="' + c3id + '"></canvas></div></div>' +
+        '<div class="pn"><h3>vs Field Average</h3><div id="cmp_' + uid + '"></div></div>' +
+      '</div>' +
+      '<div class="gs">' +
+        '<h2 id="' + gtId + '">PhD Graduates</h2>' +
+        '<input class="gi" placeholder="Search by destination or role&#8230;" id="' + gqId + '" oninput="grd(\'' + uid + '\')">' +
+        '<div class="gl" id="' + glId + '"></div>' +
+      '</div>' +
+    '</div>';
+
+  // Scroll panel into view
+  setTimeout(() => {
+    dtr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
+
+  // Build charts
+  Object.values(CH).forEach(c => { if (c) c.destroy(); });
+  CH = {};
+
+  CH.t = new Chart(document.getElementById(c1id), {
+    type: 'doughnut',
+    data: {
+      labels: ['Faculty', 'Postdoc', 'Industry', 'Other'],
+      datasets: [{ data: [r.tt || 0, r.pd || 0, r.ind || 0, ot], backgroundColor: [CC.grn, CC.amb, CC.blu, CC.gry], borderWidth: 0 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: { legend: { position: 'bottom', labels: { color: CC.t3, font: { family: 'Source Sans 3', size: 11 } } } }
+    }
+  });
+
+  const ds = (r.td || []).slice(0, 8);
+  CH.d = new Chart(document.getElementById(c2id), {
+    type: 'bar',
+    data: {
+      labels: ds.map(d => d.o.replace(/\b\w/g, l => l.toUpperCase()).substring(0, 28)),
+      datasets: [{ data: ds.map(d => d.n), backgroundColor: CC.blu, borderRadius: 2 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      scales: {
+        x: { grid: { color: CC.ln }, ticks: { color: CC.t4, font: { family: 'Source Sans 3' } } },
+        y: { grid: { display: false }, ticks: { color: CC.t3, font: { family: 'Source Sans 3', size: 10 } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  const all = D[F] || [];
+  const avg = { D: 0, T: 0, R: 0, I: 0 };
+  let cnt = 0;
+  all.forEach(x => { avg.D += x.D; avg.T += x.T; avg.R += (x.R || 1); avg.I += x.I; cnt++; });
+  if (cnt) { avg.D /= cnt; avg.T /= cnt; avg.R /= cnt; avg.I /= cnt; }
+
+  CH.r = new Chart(document.getElementById(c3id), {
+    type: 'radar',
+    data: {
+      labels: ['Destination', 'Career Tier', 'Return', 'Quality'],
+      datasets: [
+        { label: nm.substring(0, 20), data: [r.D, r.T, r.R || 1, r.I], borderColor: CC.blu, backgroundColor: 'rgba(72,146,155,.1)', pointBackgroundColor: CC.blu },
+        { label: 'Field Avg', data: [avg.D, avg.T, avg.R, avg.I], borderColor: CC.gry, backgroundColor: 'rgba(101,100,97,.06)', pointBackgroundColor: CC.gry, borderDash: [4, 4] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { r: { grid: { color: CC.ln }, ticks: { display: false }, pointLabels: { color: CC.t3, font: { family: 'Source Sans 3', size: 11 } } } },
+      plugins: { legend: { position: 'bottom', labels: { color: CC.t3, font: { family: 'Source Sans 3', size: 11 } } } }
+    }
+  });
+
+  const p = k => {
+    const v = all.map(x => x[k] || 0).sort((a, b) => a - b);
+    const i = v.findIndex(x => x >= r[k]);
+    return Math.round(i / v.length * 100);
+  };
+
+  document.getElementById('cmp_' + uid).innerHTML =
+    '<div style="font-size:.88rem;line-height:2.4;font-family:var(--serif)">' +
+    '<p><strong>Destination:</strong> ' + r.D.toFixed(3) + ' <span style="color:var(--t4)">(' + p('D') + 'th pctile)</span></p>' +
+    '<p><strong>Career tier:</strong> ' + r.T.toFixed(3) + ' <span style="color:var(--t4)">(' + p('T') + 'th pctile)</span></p>' +
+    '<p><strong>Quality:</strong> ' + r.I.toFixed(3) + ' <span style="color:var(--t4)">(' + p('I') + 'th pctile)</span></p>' +
+    '<p style="margin-top:.8rem;color:var(--t4);font-size:.78rem;font-family:var(--sans)">Within ' + FN[F] + ' (' + all.length + ' programs).</p>' +
+    '</div>';
+
+  document.getElementById(gtId).textContent = 'PhD Graduates \u2014 ' + nm;
+  grd(uid);
+}
+
+/* ── Graduate list ───────────────────────────────────────── */
+function grd(uid) {
+  if (!CR) return;
+  const key = F + '_' + CR.s;
+  const gs  = G[key] || [];
+  const gqEl = document.getElementById('gq_' + uid);
+  const glEl = document.getElementById('gl_' + uid);
+  if (!gqEl || !glEl) return;
+  const gq = (gqEl.value || '').toLowerCase();
+  if (!gs.length) {
+    glEl.innerHTML = '<div style="color:var(--t4);padding:1rem 0;font-size:.85rem">Graduate-level data available for ranked programs. Each row links to the graduate\'s <a href="https://orcid.org" target="_blank">ORCID</a> profile.</div>';
+    return;
+  }
+  let f = gs;
+  if (gq) f = gs.filter(g => (g.d || '').toLowerCase().includes(gq) || (g.r || '').toLowerCase().includes(gq));
+  let h = '<div class="gr hd"><div>Destination</div><div>Role</div><div>Country</div><div>ORCID</div></div>';
+  f.slice(0, 300).forEach(g => {
+    const dn = (g.d || '\u2014').replace(/\b\w/g, l => l.toUpperCase());
+    h += '<div class="gr"><div class="dt">' + dn + '</div><div class="rl">' + (g.r || '\u2014') +
+         '</div><div class="cy">' + (g.c || '').toUpperCase() + '</div><div class="oc">' +
+         (g.o ? '<a href="https://orcid.org/' + g.o + '" target="_blank">' + g.o.slice(-9) + '</a>' : '\u2014') +
+         '</div></div>';
+  });
+  if (f.length > 300) h += '<div style="padding:.5rem 0;color:var(--t4);font-size:.78rem">Showing 300 of ' + f.length + '</div>';
+  glEl.innerHTML = h;
+}
+
+/* ── Column sort ─────────────────────────────────────────── */
+document.querySelectorAll('thead th[data-k]').forEach(th => {
+  th.onclick = () => {
+    const k = th.dataset.k;
+    if (SK === k) SA = !SA;
+    else { SK = k; SA = th.dataset.t === 'n'; }
+    document.querySelectorAll('thead th').forEach(t => t.classList.remove('u', 'd'));
+    th.classList.add(SA ? 'u' : 'd');
+    tbl();
+  };
+});
+
+/* ── Nav helper ──────────────────────────────────────────── */
+function navToRankings() {
+  document.getElementById('s-rankings').scrollIntoView({ behavior: 'smooth' });
+}
+
 init();
 </script>
 </body>
