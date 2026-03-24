@@ -610,11 +610,9 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     else:
         edges['dest_indeg_norm'] = 0
 
-    # School prestige from SpringRank (for prestigious flag only)
-    s['school_springrank'] = s['phd_school'].map(springrank_scores).fillna(0)
-    eligible = s[s['n'] >= MIN_N]
-    prestige_thresh = eligible['school_springrank'].quantile(0.90)
-    s['is_prestigious'] = s['school_springrank'] >= prestige_thresh
+    # Prestigious flag: assigned AFTER ranking (top 15% by composite score)
+    # Deferred — set after composite is computed. Placeholder for now.
+    s['is_prestigious'] = False
 
     # I score: retention using community-adjusted dest prestige (same scale as D)
     # This avoids indegree bias that inflates academic-heavy placements
@@ -665,6 +663,11 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     # ── Rank ──
     rk = s[s['n'] >= MIN_N].sort_values('score', ascending=False).reset_index(drop=True)
     rk['rank'] = range(1, len(rk) + 1)
+
+    # ── Prestigious flag: top 15% by composite rank ──
+    n_prestigious = max(1, int(len(rk) * 0.15))
+    rk['is_prestigious'] = rk['rank'] <= n_prestigious
+    print(f"  Prestigious: top {n_prestigious} schools (top 15%)")
 
     # ── Tier percentages ──
     tb = edges.groupby(['phd_school', 'phd_country', 'tier'])['person_orcid'].nunique()
