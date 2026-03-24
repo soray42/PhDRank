@@ -337,6 +337,34 @@ def classify_tier(role_to, dest_type, dest, llm_tiers=None):
 # FIELD SCORING
 # ═══════════════════════════════════════════════════════════
 
+
+# Alias mapping for multi-language/variant school names
+SCHOOL_ALIASES = {
+    'universita bocconi': 'bocconi university',
+    'universita commerciale luigi bocconi': 'bocconi university',
+    'universita bocconi dipartimento di finanza': 'bocconi university',
+    'universite paris saclay': 'paris saclay university',
+    'universite paris 1 pantheon sorbonne': 'paris 1 pantheon sorbonne university',
+    'universite pierre et marie curie': 'sorbonne university',
+    'eidgenossische technische hochschule zurich': 'eth zurich',
+    'eth zurikh': 'eth zurich',
+    'technische universitat munchen': 'technical university of munich',
+    'ludwig maximilians universitat munchen': 'university of munich',
+    'rheinisch westfalische technische hochschule aachen': 'rwth aachen university',
+    'kungliga tekniska hogskolan': 'royal institute of technology',
+    'ecole polytechnique federale de lausanne': 'epfl',
+    'ecole normale superieure': 'ecole normale superieure',
+    'universidad autonoma de madrid': 'autonomous university of madrid',
+    'universitat de barcelona': 'university of barcelona',
+    'universidade de sao paulo': 'university of sao paulo',
+    'universidade estadual de campinas': 'university of campinas',
+    'universidade federal do rio de janeiro': 'federal university of rio de janeiro',
+    'lomonosov moscow state university': 'moscow state university',
+    'pekin university': 'peking university',
+    'beijing daxue': 'peking university',
+}
+
+
 def normalize_school(name):
     """Normalize school/institution name for deduplication."""
     if not isinstance(name, str):
@@ -347,7 +375,16 @@ def normalize_school(name):
     s = re.sub(r'[,.:;\'\x27\u2019]+', '', s)     # remove punctuation + apostrophes
     s = re.sub(r'[-\u2013\u2014]+', ' ', s)      # normalize dashes
     s = re.sub(r'\bat\b', '', s)                 # remove "at" (univ of X at Y)
+    s = re.sub(r'\bdipartimento\s+di\s+\w+', '', s)  # remove Italian dept suffix
     s = re.sub(r'\s+', ' ', s).strip()
+    # Apply alias mapping FIRST (before language normalization)
+    if s in SCHOOL_ALIASES:
+        return SCHOOL_ALIASES[s]
+    # Strip accents for matching: à→a, é→e, ü→u, etc.
+    import unicodedata
+    s_ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode('ascii')
+    if s_ascii in SCHOOL_ALIASES:
+        return SCHOOL_ALIASES[s_ascii]
     return s
 
 
