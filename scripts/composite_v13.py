@@ -353,6 +353,18 @@ SCHOOL_ALIASES = {
     'rheinisch westfalische technische hochschule aachen': 'rwth aachen university',
     'kungliga tekniska hogskolan': 'royal institute of technology',
     'ecole polytechnique federale de lausanne': 'epfl',
+    'eth': 'eth zurich', 'eth zurich': 'eth zurich', 'eth zurikh': 'eth zurich',
+    'eidgenossische technische hochschule zurich': 'eth zurich',
+    'swiss federal institute of technology ethz': 'eth zurich',
+    'swiss federal institute of technology in zurich ethz': 'eth zurich',
+    'eth bereich hochschulen': 'eth zurich',
+    'courant institute of mathematical sciences new york university': 'new york university',
+    'new york university tandon': 'new york university',
+    'mccormick school of engineering northwestern university': 'northwestern university',
+    'harvard university john a paulson': 'harvard university',
+    'university of oxford somerville college': 'university of oxford',
+    'university of oxford university college oxford': 'university of oxford',
+    'cambridge university judge school': 'university of cambridge',
     'ecole normale superieure': 'ecole normale superieure',
     'universidad autonoma de madrid': 'autonomous university of madrid',
     'universitat de barcelona': 'university of barcelona',
@@ -377,14 +389,13 @@ def normalize_school(name):
     s = re.sub(r'\bat\b', '', s)                 # remove "at" (univ of X at Y)
     s = re.sub(r'\bdipartimento\s+di\s+\w+', '', s)  # remove Italian dept suffix
     s = re.sub(r'\s+', ' ', s).strip()
-    # Apply alias mapping FIRST (before language normalization)
+    # Always strip accents: ü→u, é→e, à→a, ö→o, etc.
+    import unicodedata
+    s = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode('ascii')
+    s = re.sub(r'\s+', ' ', s).strip()
+    # Apply alias mapping
     if s in SCHOOL_ALIASES:
         return SCHOOL_ALIASES[s]
-    # Strip accents for matching: à→a, é→e, ü→u, etc.
-    import unicodedata
-    s_ascii = unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode('ascii')
-    if s_ascii in SCHOOL_ALIASES:
-        return SCHOOL_ALIASES[s_ascii]
     return s
 
 
@@ -710,8 +721,17 @@ def main():
     # Load dest prestige (SpringRank-based, 100% coverage)
     dp_path = os.path.join(d, 'dest_prestige_sr.json')
     with open(dp_path, 'r', encoding='utf-8') as f:
-        dest_prestige = json.load(f)
-    print(f"  Dest prestige: {len(dest_prestige):,} destinations (SpringRank-based)")
+        raw_dp = json.load(f)
+    # Normalize dest_prestige keys to match normalize_school (accent-stripped)
+    import unicodedata as _ud
+    dest_prestige = {}
+    for k, v in raw_dp.items():
+        k_norm = _ud.normalize('NFKD', k).encode('ascii', 'ignore').decode('ascii')
+        if k_norm not in dest_prestige or v > dest_prestige[k_norm]:
+            dest_prestige[k_norm] = v
+        if k not in dest_prestige or v > dest_prestige.get(k, 0):
+            dest_prestige[k] = v  # keep original too
+    print(f"  Dest prestige: {len(dest_prestige):,} destinations (accent-normalized)")
 
     # Load LLM tier mapping
     tier_csv = os.path.join(d, 'unique_roles_v3_classified.csv')
