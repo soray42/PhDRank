@@ -709,7 +709,7 @@ def main():
 
     # Load dest prestige (SpringRank-based, 100% coverage)
     dp_path = os.path.join(d, 'dest_prestige_sr.json')
-    with open(dp_path, 'r') as f:
+    with open(dp_path, 'r', encoding='utf-8') as f:
         dest_prestige = json.load(f)
     print(f"  Dest prestige: {len(dest_prestige):,} destinations (SpringRank-based)")
 
@@ -728,7 +728,7 @@ def main():
     # Load SpringRank scores
     sr_path = os.path.join(d, 'springrank_scores.json')
     if os.path.exists(sr_path):
-        with open(sr_path, 'r') as f:
+        with open(sr_path, 'r', encoding='utf-8') as f:
             springrank_scores = json.load(f)
         print(f"  SpringRank scores: {len(springrank_scores):,} institutions")
     else:
@@ -738,7 +738,7 @@ def main():
     # Load community assignments
     comm_path = os.path.join(d, 'node_communities.json')
     if os.path.exists(comm_path):
-        with open(comm_path, 'r') as f:
+        with open(comm_path, 'r', encoding='utf-8') as f:
             node_comms = json.load(f)
         print(f"  Node communities: {len(node_comms):,} nodes")
     else:
