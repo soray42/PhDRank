@@ -362,7 +362,8 @@ td { padding: .55rem .5rem; white-space: nowrap; }
 .tt  { background: var(--sage); }
 .pd  { background: var(--terra); }
 .ii  { background: var(--slate); }
-.oo  { background: #B8A898; }
+.rr  { background: var(--burgundy); }
+.gg  { background: #D4A574; }
 
 /* ═══════════════════════════════════════════════════════
    RANKINGS PAGE
@@ -1189,7 +1190,7 @@ const CC = {
   sage:     '#6B7F5E',
   terra:    '#C2724E',
   slate:    '#5B7089',
-  neutral:  '#B8A898',
+  neutral:  '#D4A574',
   burgundy: '#7B3540',
   ink:      '#2C2416',
   muted:    '#8A857D',
@@ -1313,7 +1314,8 @@ function renderHomeTbl() {
         '<div class="tt" style="width:' + (r.tt||0) + '%"></div>' +
         '<div class="pd" style="width:' + (r.pd||0) + '%"></div>' +
         '<div class="ii" style="width:' + (r.ind||0) + '%"></div>' +
-        '<div class="oo" style="width:' + ot + '%"></div>' +
+        '<div class="rr" style="width:' + (r.res||0) + '%"></div>' +
+        '<div class="gg" style="width:' + (r.gov||0) + '%"></div>' +
       '</div></td>';
     tr.onclick = () => navigate('school', homeF, r.s);
     tb.appendChild(tr);
@@ -1399,7 +1401,8 @@ function rankTbl() {
         '<div class="tt" style="width:' + (r.tt||0) + '%"></div>' +
         '<div class="pd" style="width:' + (r.pd||0) + '%"></div>' +
         '<div class="ii" style="width:' + (r.ind||0) + '%"></div>' +
-        '<div class="oo" style="width:' + ot + '%"></div>' +
+        '<div class="rr" style="width:' + (r.res||0) + '%"></div>' +
+        '<div class="gg" style="width:' + (r.gov||0) + '%"></div>' +
       '</div></td>';
 
     const dtr = document.createElement('tr');
@@ -1409,9 +1412,8 @@ function rankTbl() {
     dtd.colSpan = 10;
     dtr.appendChild(dtd);
 
-    tr.onclick = () => toggleRankDetail(tr, dtr, r);
+    tr.onclick = () => navigate('school', F, r.s);
     tb.appendChild(tr);
-    tb.appendChild(dtr);
   });
 
   const smw = document.getElementById('show-more-wrap');
@@ -1469,7 +1471,8 @@ function toggleRankDetail(tr, dtr, r) {
         '<div class="dk"><div class="v" style="color:var(--sage)">'     + (r.tt||0).toFixed(0)    + '%</div><div class="l">Faculty</div></div>' +
         '<div class="dk"><div class="v" style="color:var(--terra)">'    + (r.pd||0).toFixed(0)    + '%</div><div class="l">Postdoc</div></div>' +
         '<div class="dk"><div class="v" style="color:var(--slate)">'    + (r.ind||0).toFixed(0)   + '%</div><div class="l">Industry</div></div>' +
-        '<div class="dk"><div class="v" style="color:var(--neutral)">'  + ot.toFixed(0)            + '%</div><div class="l">Other</div></div>' +
+        '<div class="dk"><div class="v" style="color:var(--burgundy)">'  + (r.res||0).toFixed(0)     + '%</div><div class="l">Research</div></div>' +
+        '<div class="dk"><div class="v" style="color:var(--neutral)">'  + (r.gov||0).toFixed(0)     + '%</div><div class="l">Government</div></div>' +
         '<div class="dk"><div class="v">'                               + (r.pi||0).toFixed(0)    + '%</div><div class="l">Intl Rate</div></div>' +
       '</div>' +
       '<div class="dg">' +
@@ -1496,9 +1499,9 @@ function toggleRankDetail(tr, dtr, r) {
   rankCharts.t = new Chart(document.getElementById(c1id), {
     type: 'doughnut',
     data: {
-      labels: ['Faculty', 'Postdoc', 'Industry', 'Other'],
-      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, ot],
-        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.neutral],
+      labels: ['Faculty', 'Postdoc', 'Industry', 'Research', 'Government'],
+      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, r.res||0, r.gov||0],
+        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.burgundy, CC.neutral],
         borderColor: CC.warm_wh, borderWidth: 2 }]
     },
     options: {
@@ -1646,9 +1649,9 @@ function openSchool(field, slug) {
   schoolCharts.donut = new Chart(document.getElementById('school-chart-donut'), {
     type: 'doughnut',
     data: {
-      labels: ['Faculty', 'Postdoc', 'Industry', 'Other'],
-      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, ot],
-        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.neutral],
+      labels: ['Faculty', 'Postdoc', 'Industry', 'Research', 'Government'],
+      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, r.res||0, r.gov||0],
+        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.burgundy, CC.neutral],
         borderColor: CC.warm_wh, borderWidth: 2 }]
     },
     options: {
