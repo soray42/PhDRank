@@ -1499,9 +1499,9 @@ function toggleRankDetail(tr, dtr, r) {
   rankCharts.t = new Chart(document.getElementById(c1id), {
     type: 'doughnut',
     data: {
-      labels: ['Faculty', 'Postdoc', 'Industry', 'Research', 'Government'],
-      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, r.res||0, r.gov||0],
-        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.burgundy, CC.neutral],
+      labels: ['Faculty', 'Postdoc', 'Industry', 'Research', 'Government', 'Acad. (unspec.)', 'Industry (unspec.)'],
+      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, r.res||0, r.gov||0, r.nac||0, r.nin||0],
+        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.burgundy, CC.neutral, '#C4B99A', '#A8BCC4'],
         borderColor: CC.warm_wh, borderWidth: 2 }]
     },
     options: {
@@ -1649,9 +1649,9 @@ function openSchool(field, slug) {
   schoolCharts.donut = new Chart(document.getElementById('school-chart-donut'), {
     type: 'doughnut',
     data: {
-      labels: ['Faculty', 'Postdoc', 'Industry', 'Research', 'Government'],
-      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, r.res||0, r.gov||0],
-        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.burgundy, CC.neutral],
+      labels: ['Faculty', 'Postdoc', 'Industry', 'Research', 'Government', 'Acad. (unspec.)', 'Industry (unspec.)'],
+      datasets: [{ data: [r.tt||0, r.pd||0, r.ind||0, r.res||0, r.gov||0, r.nac||0, r.nin||0],
+        backgroundColor: [CC.sage, CC.terra, CC.slate, CC.burgundy, CC.neutral, '#C4B99A', '#A8BCC4'],
         borderColor: CC.warm_wh, borderWidth: 2 }]
     },
     options: {

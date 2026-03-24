@@ -739,6 +739,8 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
             'ind': round(float(r.get('pct_industry_senior', 0) + r.get('pct_industry_entry', 0)), 1),
             'res': round(float(r.get('pct_permanent_research', 0)), 1),
             'gov': round(float(r.get('pct_government', 0)), 1),
+            'nac': round(float(r.get('pct_null_academic', 0)), 1),
+            'nin': round(float(r.get('pct_null_industry', 0)), 1),
             'td': top5,
         })
 
