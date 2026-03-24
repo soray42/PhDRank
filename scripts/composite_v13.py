@@ -409,6 +409,15 @@ def compute_field(edges, dest_prestige, node_comms, field, indeg_df, springrank_
     schools_before = edges['phd_school'].nunique()
     edges['phd_school'] = edges['phd_school'].apply(normalize_school)
     edges['dest'] = edges['dest'].apply(normalize_school)
+
+    # Fix country codes: HK schools listed as 'cn' should be 'hk'
+    HK_SCHOOLS = {'hong kong university of science and technology', 'university of hong kong',
+                  'chinese university of hong kong', 'city university of hong kong',
+                  'hong kong polytechnic university', 'hong kong baptist university',
+                  'lingnan university'}
+    hk_mask = edges['phd_school'].isin(HK_SCHOOLS) & (edges['phd_country'] == 'cn')
+    edges.loc[hk_mask, 'phd_country'] = 'hk'
+
     schools_after = edges['phd_school'].nunique()
 
     n_edges = len(edges)
